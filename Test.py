@@ -1,0 +1,3 @@
+
+def TestFunc():
+    print "WORKS"
