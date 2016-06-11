@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$USER_HOME$/git/rlagents/.idea/rlagents.iml" filepath="$USER_HOME$/git/rlagents/.idea/rlagents.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/rlagents.iml" filepath="$PROJECT_DIR$/.idea/rlagents.iml" />
     </modules>
   </component>
 </project>
