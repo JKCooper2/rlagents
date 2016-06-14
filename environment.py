@@ -1,15 +1,16 @@
 import gym
 import gym.scoreboard.scoring
-from agents.dev.ContinuousTimeRBF import RBFAgent
+from agents.dev.TabularQAgent import TabularQAgent
+from optimisation.dev.cross_entropy import CrossEntropyMethod
 
 
 def main():
     env = gym.make('CartPole-v0')
-    agent = RBFAgent(env.action_space, env.observation_space)
+    agent = CrossEntropyMethod(env.action_space, env.observation_space)
     out_dir = '/tmp/rbf-results'
     env.monitor.start(out_dir, force=True)
 
-    n_episodes = 2000
+    n_episodes = 500
     for i_episode in range(n_episodes):
 
         observation = env.reset()
