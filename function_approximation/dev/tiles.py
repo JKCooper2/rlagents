@@ -4,12 +4,14 @@ import numpy as np
 # Single Tiling implementation with equidistant spacing
 class SingleTiling:
     # Dimensions is a list containing tuples of the min and max values of each dimension
-    def __init__(self, dimensions, num_tiles, update=False):
+    def __init__(self, dimensions, num_tiles, resizeable=False):
         self.dimensions = dimensions
         self.dimensions_n = len(self.dimensions.low)
         self.num_tiles = num_tiles
-        self.update = update
-        self.update_count = 20
+
+        self.resizeable = resizeable
+        self.resize_count = 500
+        self.resize_rate = 0.01
 
         self.tiles = np.zeros(self.dimensions_n ** self.num_tiles)
 
@@ -17,8 +19,10 @@ class SingleTiling:
         self.tile_hits = self.__set_tile_hits()
 
     def __set_tile_hits(self):
-        if self.update:
+        if self.resizeable:
             return [np.zeros(self.num_tiles) for _ in range(self.dimensions_n)]
+
+        return None
 
     def __set_tile_boundaries(self):
         tile_boundaries = []
@@ -43,38 +47,25 @@ class SingleTiling:
             return 2 / float(self.num_tiles)
 
         else:
-            return self.dimensions.high[obv_ind] - self.dimensions.low[obv_ind] / float(self.num_tiles)
+            return (self.dimensions.high[obv_ind] - self.dimensions.low[obv_ind]) / float(self.num_tiles)
 
     def __update_tile_hits(self, tile):
         for i, obv in enumerate(tile):
             self.tile_hits[i][obv] += 1
 
-        for i in range(len(self.tile_hits)):
-            for j in range(len(self.tile_hits[i])):
-                if self.tile_hits[i][j] > self.update_count:
-                    side_choice = np.random.uniform() > 0.5  # Higher end or lower end to update
+            if self.tile_hits[i][obv] >= self.resize_count:
+                # 0 is lower end, 1 is upper end
+                side_choice = int(np.random.uniform() > 0.5)
 
-                    side = j
+                change = self.resize_rate * self.__get_split(i)
 
-                    if j > len(self.tile_boundaries[i]) - 1 and side_choice == 1:
-                        pass
+                if side_choice == 0 and obv > 0:
+                    self.tile_boundaries[i][obv - 1] += change
 
+                if side_choice == 1 and obv < len(self.tile_boundaries[i]):
+                    self.tile_boundaries[i][obv] -= change
 
-                    side = max(0, j-1) if np.random.uniform() < 0.5 else min(len(self.tile_boundaries[i]) - 1, j)
-                    print side, i, j
-
-                    times = -1 if side >= j-1 else 1
-
-                    print i, j, self.tile_boundaries[i][j], side, times, split
-                    j = min(len(self.tile_boundaries[i]) - 1, j)
-
-
-
-                    split = self.__get_split(i)
-                    self.tile_boundaries[i][j] += (0.05 * times * split)
-
-                    self.tile_hits[i][j] = 0
-
+                self.tile_hits[i][obv] = 0
 
     def __get_tile(self, observation):
         tile = []
@@ -89,7 +80,7 @@ class SingleTiling:
                 if j == self.num_tiles - 2:
                     tile.append(j+1)
 
-        if self.update:
+        if self.resizeable:
             self.__update_tile_hits(tile)
 
         return tile
