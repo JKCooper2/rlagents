@@ -4,7 +4,7 @@ import numpy as np
 # Single Tiling implementation with equidistant spacing
 class SingleTiling:
     # Dimensions is a list containing tuples of the min and max values of each dimension
-    def __init__(self, dimensions, num_tiles, update=True):
+    def __init__(self, dimensions, num_tiles, update=False):
         self.dimensions = dimensions
         self.dimensions_n = len(self.dimensions.low)
         self.num_tiles = num_tiles
@@ -57,7 +57,7 @@ class SingleTiling:
                     side = j
 
                     if j > len(self.tile_boundaries[i]) - 1 and side_choice == 1:
-
+                        pass
 
 
                     side = max(0, j-1) if np.random.uniform() < 0.5 else min(len(self.tile_boundaries[i]) - 1, j)

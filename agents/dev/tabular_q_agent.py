@@ -1,59 +1,78 @@
 import numpy as np
 from collections import defaultdict
+from rlagents.exploration.epsilon_greedy import EpsilonGreedy
+from rlagents.functions.decay import FixedDecay
 from rlagents.function_approximation.dev.tiles import SingleTiling
 from rlagents.function_approximation.dev.discrete import Discrete
 from gym.spaces import discrete, tuple_space, box
 
 
 class TabularQAgent(object):
-    def __init__(self, action_space, observation_space, init_mean=0.0, init_std=0.2, alpha=0.5, epsilon=1, discount=0.95):
+    def __init__(self, action_space, observation_space, init_mean=1.0, init_std=0.2, learning_rate=None, exploration=None, discount=0.95):
         self.name = "TabularQAgent"
         self.alg_id = "alg_OwSFZtRR2eZYkcxkG74Q"
         self.observation_space = observation_space
         self.action_space = action_space
-        self.action_n = self.action_space.n
+        self.action_n = action_space.n
 
         self.init_mean = init_mean
         self.init_std = init_std
-        self.alpha = alpha
-        self.epsilon = epsilon
+
         self.discount = discount
 
-        self.epsilon_decay = 0.997  # 0.997 = 5% per 1000 eps
-        self.epsilon_min = 0.02
-
-        self.alpha_decay = 0.996    # 0.996 = 2% per 1000 eps
-        self.alpha_min = 0.02
+        self.learning_rate = self.__set_learning_rate(learning_rate)
+        self.exploration = self.__set_exploration(action_space, exploration)
 
         self.step_cost = -0.01  # So agent doesn't like states it's already been in that haven't lead to a reward
 
         self.prev_obs = None
         self.prev_action = None
 
-        self.fa = self.__set_fa()
-
-        self.ep_reward = 0
-        self.ep_count = 0
+        self.fa = self.__set_fa(observation_space)
 
         self.q = defaultdict(lambda: self.init_std * np.random.randn(self.action_n) + self.init_mean)
 
-    def __set_fa(self):
-        if isinstance(self.observation_space, tuple_space.Tuple):
-            return Discrete([space.n for space in self.observation_space.spaces])
+        self.__validate_setup()
 
-        elif isinstance(self.observation_space, box.Box):
-            return SingleTiling(self.observation_space, 2)
+    def __validate_setup(self):
+        assert hasattr(self.exploration, 'choose_action') and callable(getattr(self.exploration, 'choose_action'))
+        assert hasattr(self.exploration, 'update') and callable(getattr(self.exploration, 'update'))
+        assert hasattr(self.learning_rate, 'update') and callable(getattr(self.learning_rate, 'update'))
+        assert hasattr(self.learning_rate, 'value')
 
-        elif isinstance(self.observation_space, discrete.Discrete):
-            return Discrete([self.observation_space.n])
+    @staticmethod
+    def __set_exploration(action_space, exploration):
+        if exploration is None:
+            print "Using default exploration Epsilon Greedy with decay. Start 1, decay 0.997, min 0.02"
+            return EpsilonGreedy(action_space, epsilon=1, decay=0.997, minimum=0.02)
 
-    # Epsilon Greedy
+        return exploration
+
+    @staticmethod
+    def __set_learning_rate(learning_rate):
+        if learning_rate is None:
+            print "Using default learning rate Decay. Start 1, decay 0.995, min 0.02"
+            return FixedDecay(1, decay=0.995, minimum=0.02)
+
+        return learning_rate
+
+    @staticmethod
+    def __set_fa(observation_space):
+        if isinstance(observation_space, tuple_space.Tuple):
+            return Discrete([space.n for space in observation_space.spaces])
+
+        elif isinstance(observation_space, box.Box):
+            return SingleTiling(observation_space, 6)
+
+        elif isinstance(observation_space, discrete.Discrete):
+            return Discrete([observation_space.n])
+
     def __choose_action(self, observation):
-        return np.argmax(self.q[observation]) if np.random.random() > self.epsilon else self.action_space.sample()
+        return self.exploration.choose_action(self.q[observation])
 
     def __learn(self, observation, reward, done):
         future = np.max(self.q[observation]) if not done else 0.0
-        self.q[self.prev_obs][self.prev_action] += self.alpha * (reward + self.discount * future - self.q[self.prev_obs][self.prev_action])
+        self.q[self.prev_obs][self.prev_action] += self.learning_rate.value * (reward + self.discount * future - self.q[self.prev_obs][self.prev_action])
 
     def act(self, observation, reward, done):
         observation = self.fa.to_array(observation)
@@ -64,18 +83,11 @@ class TabularQAgent(object):
 
         action = self.__choose_action(observation)
 
-        self.ep_reward += reward
         self.prev_obs = observation
         self.prev_action = action
 
         if done:
-            self.ep_count += 1
-            self.ep_reward = 0
-
-            if self.epsilon > self.epsilon_min:
-                self.epsilon *= self.epsilon_decay
-
-            if self.alpha > self.alpha_min:
-                self.alpha *= self.alpha_decay
+            self.exploration.update()
+            self.learning_rate.update()
 
         return action
