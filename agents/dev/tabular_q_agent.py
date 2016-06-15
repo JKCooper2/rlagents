@@ -3,7 +3,7 @@ from collections import defaultdict
 from rlagents.exploration.epsilon_greedy import EpsilonGreedy
 from rlagents.functions.decay import FixedDecay
 from rlagents.function_approximation.dev.tiles import SingleTiling
-from rlagents.function_approximation.dev.discrete import Discrete
+from rlagents.function_approximation.discrete import Discrete
 from gym.spaces import discrete, tuple_space, box
 
 
@@ -44,7 +44,7 @@ class TabularQAgent(object):
     def __set_exploration(action_space, exploration):
         if exploration is None:
             print "Using default exploration Epsilon Greedy with decay. Start 1, decay 0.997, min 0.02"
-            return EpsilonGreedy(action_space, epsilon=1, decay=0.997, minimum=0.02)
+            return EpsilonGreedy(action_space, epsilon=1, decay=0.997, minimum=0.05)
 
         return exploration
 
@@ -52,7 +52,7 @@ class TabularQAgent(object):
     def __set_learning_rate(learning_rate):
         if learning_rate is None:
             print "Using default learning rate Decay. Start 1, decay 0.995, min 0.02"
-            return FixedDecay(1, decay=0.995, minimum=0.02)
+            return FixedDecay(1, decay=0.995, minimum=0.05)
 
         return learning_rate
 
@@ -62,7 +62,7 @@ class TabularQAgent(object):
             return Discrete([space.n for space in observation_space.spaces])
 
         elif isinstance(observation_space, box.Box):
-            return SingleTiling(observation_space, 6)
+            return SingleTiling(observation_space, 8)
 
         elif isinstance(observation_space, discrete.Discrete):
             return Discrete([observation_space.n])
@@ -75,15 +75,15 @@ class TabularQAgent(object):
         self.q[self.prev_obs][self.prev_action] += self.learning_rate.value * (reward + self.discount * future - self.q[self.prev_obs][self.prev_action])
 
     def act(self, observation, reward, done):
-        observation = self.fa.to_array(observation)
+        observation_key = self.fa.to_array(observation)
 
         reward += self.step_cost
 
-        self.__learn(observation, reward, done)
+        self.__learn(observation_key, reward, done)
 
-        action = self.__choose_action(observation)
+        action = self.__choose_action(observation_key)
 
-        self.prev_obs = observation
+        self.prev_obs = observation_key
         self.prev_action = action
 
         if done:

@@ -13,7 +13,7 @@ ENVS = ["FrozenLake-v0",
 
 
 def main():
-    env = gym.make(ENVS[0])
+    env = gym.make("MountainCar-v0")
     agent = TabularQAgent(env.action_space, env.observation_space)
     out_dir = '/tmp/' + agent.name + '-results'
     env.monitor.start(out_dir, force=True)
@@ -35,7 +35,7 @@ def main():
 
     env.monitor.close()
 
-    # gym.upload(out_dir, algorithm_id=agent.alg_id, api_key="sk_kH4UU0T8TgmV0K1DN8SiQ")
+    # gym.upload(out_dir, algorithm_id=agent.alg_id, api_key=agent.alg_id)
 
 
 if __name__ == '__main__':
