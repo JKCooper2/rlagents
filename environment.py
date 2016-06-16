@@ -1,6 +1,8 @@
 import gym
 import gym.scoreboard.scoring
-from agents.dev.tabular_q_agent import TabularQAgent
+
+from agents.tabular_q_agent import TabularQAgent
+from agents.evolutionary_agent import EvolutionaryAgent
 
 ENVS = ["FrozenLake-v0",
         "FrozenLake8x8-v0",
@@ -13,12 +15,12 @@ ENVS = ["FrozenLake-v0",
 
 
 def main():
-    env = gym.make("MountainCar-v0")
-    agent = TabularQAgent(env.action_space, env.observation_space)
+    env = gym.make("CartPole-v0")
+    agent = EvolutionaryAgent(env.action_space, env.observation_space)
     out_dir = '/tmp/' + agent.name + '-results'
-    env.monitor.start(out_dir, force=True)
+    env.monitor.start(out_dir, force=True, video_callable=False)
 
-    n_episodes = 5000
+    n_episodes = 1000
     for i_episode in range(n_episodes):
 
         observation = env.reset()
