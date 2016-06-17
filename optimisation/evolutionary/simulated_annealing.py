@@ -47,7 +47,7 @@ class SimulatedAnnealing:
             self.__set_vals(batch_vals, result)
 
         acceptance_probability = np.e ** ((result - self.testing_result) / self.temperature.value)
-        print self.testing_result, result, self.shift.value, self.temperature.value, acceptance_probability
+        # print self.testing_result, result, self.shift.value, self.temperature.value, acceptance_probability
 
         if np.random.uniform() < acceptance_probability:
             self.__set_vals(batch_vals, result)
@@ -60,8 +60,6 @@ class SimulatedAnnealing:
         self.temperature.update()
         self.bias.update()
         self.shift.update()
-
-        print self.testing_vals is batch_vals
 
         return batch
 

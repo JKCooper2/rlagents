@@ -5,7 +5,9 @@ class Softmax:
     def __init__(self, temperature=0.1):
         self.temperature = temperature
 
-    def choose_action(self, q_s):
+    def choose_action(self, model, observation):
+        q_s = model.action_value(observation)
+
         probabilities = []
 
         for action in range(len(q_s)):

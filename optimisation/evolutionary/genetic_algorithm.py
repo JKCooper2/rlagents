@@ -43,7 +43,7 @@ class GeneticAlgorithm:
             next_gen.append(child)
 
         for i in range(len(batch)):
-            batch[i].import_values(next_gen[i])
+            batch[i].import_values(np.array(next_gen[i]))
 
         return batch
 
