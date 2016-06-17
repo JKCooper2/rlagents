@@ -1,11 +1,16 @@
 import numpy as np
+from rlagents import validate
 
 
+# Softmax selects the action to take based on the actions value relative to other actions
 class Softmax:
     def __init__(self, temperature=0.1):
+        validate.number_range(temperature, minimum=0)
         self.temperature = temperature
 
     def choose_action(self, model, observation):
+        validate.model(model)
+
         q_s = model.action_value(observation)
 
         probabilities = []
@@ -20,13 +25,16 @@ class Softmax:
         choice = np.random.uniform()
         cum_sum = 0
 
-        for action, value in enumerate(probabilities):
+        action = None
+
+        for act, value in enumerate(probabilities):
             cum_sum += value
 
             if cum_sum >= choice:
-                return action
+                action = act
+                break
 
-        print "ERROR CHOOSING WITH SOFTMAX", probabilities, choice, cum_sum
+        return action
 
     def update(self):
         pass
