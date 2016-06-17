@@ -7,11 +7,11 @@ class EpsilonGreedy:
         self.action_space = action_space
         self.epsilon = FixedDecay(epsilon, decay, minimum)
 
-    def choose_action(self, q_s):
+    def choose_action(self, model, observation):
         if np.random.uniform() < self.epsilon.value:
             return self.action_space.sample()
 
-        return np.argmax(q_s)
+        return model.action(observation)
 
     def update(self):
         self.epsilon.update()

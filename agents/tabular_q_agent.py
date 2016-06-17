@@ -1,9 +1,8 @@
-import numpy as np
-from collections import defaultdict
 from rlagents.exploration.epsilon_greedy import EpsilonGreedy
 from rlagents.functions.decay import FixedDecay
 from rlagents.function_approximation.dev.tiles import SingleTiling
 from rlagents.function_approximation.discrete import Discrete
+from rlagents.models.tabular import TabularModel
 from gym.spaces import discrete, tuple_space, box
 
 
@@ -30,7 +29,7 @@ class TabularQAgent(object):
 
         self.fa = self.__set_fa(observation_space)
 
-        self.q = defaultdict(lambda: self.init_std * np.random.randn(self.action_n) + self.init_mean)
+        self.model = TabularModel(action_space, observation_space)
 
         self.__validate_setup()
 
@@ -68,11 +67,11 @@ class TabularQAgent(object):
             return Discrete([observation_space.n])
 
     def __choose_action(self, observation):
-        return self.exploration.choose_action(self.q[observation])
+        return self.exploration.choose_action(self.model, observation)
 
-    def __learn(self, observation, reward, done):
-        future = np.max(self.q[observation]) if not done else 0.0
-        self.q[self.prev_obs][self.prev_action] += self.learning_rate.value * (reward + self.discount * future - self.q[self.prev_obs][self.prev_action])
+    def __learn(self, observation_key, reward, done):
+        future = self.model.state_value(observation_key) if not done else 0.0
+        self.model.weights[self.prev_obs][self.prev_action] += self.learning_rate.value * (reward + self.discount * future - self.model.weights[self.prev_obs][self.prev_action])
 
     def act(self, observation, reward, done):
         observation_key = self.fa.to_array(observation)

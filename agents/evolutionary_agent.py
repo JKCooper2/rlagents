@@ -1,12 +1,10 @@
 import copy
-from rlagents.exploration.epsilon_greedy import EpsilonGreedy
-from rlagents.models.linear import BinaryLinearModel
-from rlagents.optimisation.evolutionary.cross_entropy import CrossEntropy
-from rlagents.optimisation.evolutionary.simulated_annealing import SimulatedAnnealing
+from rlagents.models.linear import DiscreteActionLinearModel
+from rlagents.optimisation.evolutionary.hill_climbing import HillClimbing
 
 
 class EvolutionaryAgent:
-    def __init__(self, action_space, observation_space, exploration=None, model=None, evolution=None, batch_size=1):
+    def __init__(self, action_space, observation_space, model=None, evolution=None, batch_size=1):
         self.name = "EvolutionaryAgent"
         self.action_space = action_space
         self.observation_space = observation_space
@@ -18,36 +16,22 @@ class EvolutionaryAgent:
 
         self.episode_reward = 0
 
-        self.exploration = self.__set_exploration(action_space, exploration)
         self.model = self.__set_model(model, action_space, observation_space)
         self.evolution = self.__set_evolution(evolution)
 
         self.batch = self.__set_batch()
 
-        self.__validate_setup()
-
-    def __validate_setup(self):
-        assert hasattr(self.exploration, 'choose_action') and callable(getattr(self.exploration, 'choose_action'))
-        assert hasattr(self.exploration, 'update') and callable(getattr(self.exploration, 'update'))
-
-    @staticmethod
-    def __set_exploration(action_space, exploration):
-        if exploration is None:
-            return EpsilonGreedy(action_space, epsilon=0, decay=0, minimum=0)
-
-        return exploration
-
     @staticmethod
     def __set_model(model, action_space, observation_space):
         if model is None:
-            return BinaryLinearModel(len(observation_space.low), bias=True)
+            return DiscreteActionLinearModel(action_space, observation_space)
 
         return model
 
     @staticmethod
     def __set_evolution(evolution):
         if evolution is None:
-            return SimulatedAnnealing()
+            return HillClimbing()
 
         return evolution
 
@@ -59,10 +43,7 @@ class EvolutionaryAgent:
         return batch
 
     def __choose_action(self, observation):
-        score = self.batch[self.batch_test].score(observation)
-        obs = [i == score for i in range(self.action_space.n)]
-
-        return self.exploration.choose_action(obs)
+        return self.batch[self.batch_test].action(observation)
 
     def act(self, observation, reward, done):
         action = self.__choose_action(observation)
