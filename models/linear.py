@@ -53,7 +53,7 @@ class DiscreteActionLinearModel:
 class ContinuousActionLinearModel:
     def __init__(self, action_space, observation_space, bias=True, normalise=False):
         self.observation_space = observation_space
-        self.n_observations = observation_space.shape[0]
+        self.n_observations = observation_space.shape[0] if hasattr(observation_space, 'shape') else observation_space.n
         self.action_space = action_space
         self.n_actions = action_space.shape[0]
         self.bias = bias
@@ -63,7 +63,10 @@ class ContinuousActionLinearModel:
         self.bias_weight = np.random.randn(self.n_actions)
 
     def __score(self, observation):
-        return observation.dot(self.weights) + self.bias_weight
+        if hasattr(observation, 'dot'):
+            return observation.dot(self.weights) + self.bias_weight
+
+        return observation * self.weights + self.bias_weight
 
     # Returns the state value
     def state_value(self, observation):

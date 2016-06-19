@@ -3,15 +3,16 @@ from collections import defaultdict
 
 
 class TabularModel:
-    def __init__(self, action_space, observation_space, mean=0.0, std=1.0):
-        self.action_space = action_space
-        self.n_actions = action_space.n
-        self.observation_space = observation_space
+    def __init__(self, n_actions, observation_fa, mean=0.0, std=1.0):
+        self.n_actions = n_actions
+        self.n_observations = observation_fa.num_discrete
         self.mean = mean
         self.std = std
 
-        self.weights = np.random.normal(mean, scale=std, size=(observation_space.n, self.n_actions))  # defaultdict(lambda: std * np.random.randn(self.n_actions) + mean)
+        self.weights = None
         self.keys = None
+
+        self.reset()
 
     def state_value(self, observation):
         return max(self.weights[observation])
@@ -32,8 +33,8 @@ class TabularModel:
 
     def import_values(self, values):
         for i in range(len(values)/self.n_actions):
-            self.weights[i] = np.array(values[self.n_actions * i : self.n_actions * i + self.n_actions])
+            self.weights[i] = np.array(values[self.n_actions * i: self.n_actions * i + self.n_actions])
 
     def reset(self):
-        self.weights = np.random.normal(self.mean, scale=self.std, size=(self.observation_space.n, self.n_actions))
+        self.weights = np.random.normal(self.mean, scale=self.std, size=(self.n_observations, self.n_actions))
         self.keys = None

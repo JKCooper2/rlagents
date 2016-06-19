@@ -6,11 +6,15 @@ class Discrete:
         self.values = values
         self.max = np.prod(self.values)
 
+    @property
+    def num_discrete(self):
+        return self.max
+
     def __validate(self, observation):
         for i in range(len(self.values)):
             assert observation[i] < self.values[i]
 
-    def to_array(self, observation):
+    def convert(self, observation):
         if len(self.values) == 1:
             observation = [observation]
 

@@ -13,10 +13,15 @@ class SingleTiling:
         self.resize_count = 500
         self.resize_rate = 0.01
 
-        self.tiles = np.zeros(self.dimensions_n ** self.num_tiles)
+        self.total_tiles = self.dimensions_n ** self.num_tiles
+        self.tiles = np.zeros(self.total_tiles)
 
         self.tile_boundaries = self.__set_tile_boundaries()
         self.tile_hits = self.__set_tile_hits()
+
+    @property
+    def num_discrete(self):
+        return self.total_tiles
 
     def __set_tile_hits(self):
         if self.resizeable:
@@ -88,5 +93,5 @@ class SingleTiling:
     def __convert_base10(self, tile):
         return sum([val * self.num_tiles ** (len(tile) - (i + 1)) for i, val in enumerate(tile)])
 
-    def to_array(self, observation):
+    def convert(self, observation):
         return self.__convert_base10(self.__get_tile(observation))

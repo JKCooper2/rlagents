@@ -9,15 +9,15 @@ def decay(_decay):
         raise NotImplementedError("Decay must contain 'value' property")
 
 
-def epsilon_greedy(_epsilon_greedy):
-    if getattr(_epsilon_greedy, "epsilon", None) is None:
-        raise NotImplementedError("Epsilon Greedy must contain 'epsilon' property")
+def exploration(_exploration):
+    if getattr(_exploration, "value", None) is None:
+        raise NotImplementedError("Exploration must contain 'value' property")
 
-    if not callable(getattr(_epsilon_greedy, "update", None)):
-        raise NotImplementedError("Epsilon Greedy must implement .update()")
+    if not callable(getattr(_exploration, "update", None)):
+        raise NotImplementedError("Exploration must implement .update()")
 
-    if not callable(getattr(_epsilon_greedy, "choose_action", None)):
-        raise NotImplementedError("Epsilon Greedy must implement .choose_action()")
+    if not callable(getattr(_exploration, "choose_action", None)):
+        raise NotImplementedError("Exploration must implement .choose_action()")
 
 
 def action_space(_action_space):
@@ -45,8 +45,13 @@ def number_range(_number, minimum=-np.inf, maximum=np.inf, min_eq=False, max_eq=
     if maximum < minimum:
         raise ValueError("Max must be greater than min")
 
-    if (min_eq and _number < minimum) or _number < minimum:
+    if (min_eq and _number < minimum) or (not min_eq and _number <= minimum):
         raise ValueError("Number is below the accepted range")
 
-    if (max_eq and _number > maximum) or _number >= maximum:
+    if (max_eq and _number > maximum) or (not max_eq and _number >= maximum):
         raise ValueError("Number is above the accepted range")
+
+
+def observation_fa(_observation_fa):
+    if not callable(getattr(_observation_fa, "convert", None)):
+        raise NotImplementedError("Observation FA must implement .convert(observation)")

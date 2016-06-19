@@ -1,38 +1,35 @@
 import gym
 import gym.scoreboard.scoring
 
-from agents.tabular_q_agent import TabularQAgent
 from rlagents.agents.evolutionary_agent import EvolutionaryAgent
-from rlagents.models.linear import ContinuousActionLinearModel
-from rlagents.models.tabular import TabularModel
-from rlagents.optimisation.evolutionary.hill_climbing import HillClimbing
-from rlagents.optimisation.evolutionary.genetic_algorithm import GeneticAlgorithm
-from rlagents.exploration.epsilon_greedy import EpsilonGreedy
-from rlagents.functions.decay import FixedDecay
+from rlagents.models.linear import DiscreteActionLinearModel
+from rlagents.optimisation.evolutionary.cross_entropy import CrossEntropy
+from rlagents.agents.random import RandomAgent
+from rlagents.agents.q_learning_agent import QLearningAgent
 
-ENVS = ["FrozenLake-v0",
-        "FrozenLake8x8-v0",
-        "Taxi-v1",
-        "Roulette-v0",
-        "Blackjack-v0",
-        "NChain-v0",
-        "CartPole-v0",
-        "Acrobot-v0"]
+ENVS = ["CartPole-v0",
+        "Acrobot-v0",
+        "OffSwitchCartpole-v0",
+        "SemisuperPendulumNoise-v0",
+        "SemisuperPendulumRandom-v0",
+        "SemisuperPendulumDecay-v0"]
 
 
 def main():
-    env = gym.make("Pendulum-v0")
+    env = gym.make(ENVS[1])
 
     # Agent Setup
-    model = TabularModel(env.action_space, env.observation_space)
-    evolution = GeneticAlgorithm(scaling=2)
-    batch_size = 50
-    agent = EvolutionaryAgent(env.action_space, env.observation_space, model=model, evolution=evolution, batch_size=batch_size)
+    # model = DiscreteActionLinearModel(env.action_space, env.observation_space)
+    # evolution = CrossEntropy(elite=0.2)
+    # batch_size = 40
+    # agent = EvolutionaryAgent(env.action_space, env.observation_space, model=model, evolution=evolution, batch_size=batch_size)
+    # agent = RandomAgent(env.action_space, env.observation_space)
+    agent = QLearningAgent(env.action_space, env.observation_space)
 
     out_dir = '/tmp/' + agent.name + '-results'
     env.monitor.start(out_dir, force=True, video_callable=False)
 
-    n_episodes = 2000
+    n_episodes = 1000
     for i_episode in range(n_episodes):
 
         observation = env.reset()
@@ -46,11 +43,10 @@ def main():
             action = agent.act(observation, reward, done)
 
         print gym.scoreboard.scoring.score_from_local(out_dir)
-        # print evolution.best_score, evolution.spread.value
 
     env.monitor.close()
 
-    # gym.upload(out_dir, algorithm_id=agent.alg_id, api_key=agent.alg_id)
+    # gym.upload(out_dir, algorithm_id=agent.alg_id, api_key="sk_kH4UU0T8TgmV0K1DN8SiQ")
 
 
 if __name__ == '__main__':
