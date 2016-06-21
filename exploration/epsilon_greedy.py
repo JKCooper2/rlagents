@@ -23,7 +23,10 @@ class EpsilonGreedy:
 
         action = model.action(observation)
 
-        validate.action(self._action_space, action)
+        try:
+            validate.action(self._action_space, action)
+        except:
+            action = self._action_space.sample()
 
         return action
 

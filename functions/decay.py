@@ -34,11 +34,7 @@ class EpisodeNumber:
             return
 
         self.episode_number += 1
-
-        self.value = 1 / self.episode_number ** self.decay
-
-        if self.value < self.minimum:
-            self.value = self.minimum
+        self.value = max(1 / self.episode_number ** self.decay, self.minimum)
 
     def stop(self):
         self.allow_updates = False

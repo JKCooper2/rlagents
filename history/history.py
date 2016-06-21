@@ -1,13 +1,14 @@
 from rlagents import validate
+import numpy as np
 
 
 class History:
     def __init__(self, size=100):
-        validate.number_range(size, 0, 10000)
+        validate.number_range(size, 0, 100000)
 
         self.size = size
 
-        self.observations = []
+        self.observations = None
         self.rewards = []
         self.done = []
         self.actions = []
@@ -15,7 +16,10 @@ class History:
 
     def store(self, observation=None, reward=None, done=None, action=None, parameters=None):
         if observation is not None:
-            self.observations.append(observation)
+            if self.observations is None:
+                self.observations = observation.reshape(len(observation), 1)
+            else:
+                self.observations = np.concatenate((self.observations, observation.reshape(len(observation), 1)), axis=0)
 
             if len(self.observations) > self.size:
                 self.observations = self.observations[-self.size:]
