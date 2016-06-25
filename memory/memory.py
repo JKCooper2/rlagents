@@ -1,68 +1,69 @@
 from rlagents import validate
+from rlagents.memory.history import History
 import numpy as np
 
 
 class LongTerm:
-    def __init__(self, size=100):
+    def __init__(self, size=100, forget='oldest'):
         validate.number_range(size, 0, 100000)
 
-        self.size = size
+        self.max_size = size
+        self.history = {}
+        self.key = 0  # Memory value
 
-        self.observations = None
-        self.rewards = []
-        self.done = []
-        self.actions = []
-        self.parameters = []
+        if forget not in ['oldest', 'newest', 'random']:
+            raise ValueError("Forget strategy is invalid")
 
-    def store(self, observation=None, reward=None, done=None, action=None, parameters=None):
+        self.forget = forget
+
+    @property
+    def size(self):
+        return len(self.history)
+
+    def __forget_key(self, memory):
+        if self.forget == 'oldest':
+            return min(memory)
+
+        if self.forget == 'newest':
+            return max(memory)
+
+        if self.forget == 'random':
+            return np.random.choice(memory.keys())
+
+    def store(self, observation=None, reward=None, done=None, action=None, parameters=None, step=False, shift=0):
+        if (self.key + shift) not in self.history:
+            self.history[self.key + shift] = History(key=self.key+shift)
+
         if observation is not None:
-            if self.observations is None:
-                self.observations = observation.reshape(len(observation), 1)
-            else:
-                self.observations = np.concatenate((self.observations, observation.reshape(len(observation), 1)), axis=0)
-
-            if len(self.observations) > self.size:
-                self.observations = self.observations[-self.size:]
+            self.history[self.key + shift].observation = observation
 
         if reward is not None:
-            self.rewards.append(reward)
-
-            if len(self.rewards) > self.size:
-                self.rewards = self.rewards[-self.size:]
+            self.history[self.key + shift].reward = reward
 
         if done is not None:
-            self.done.append(done)
-
-            if len(self.done) > self.size:
-                self.done = self.done[-self.size:]
+            self.history[self.key + shift].done = done
 
         if action is not None:
-            self.actions.append(action)
-
-            if len(self.actions) > self.size:
-                self.actions = self.actions[-self.size:]
+            self.history[self.key + shift].action = action
 
         if parameters is not None:
-            self.parameters.append(parameters)
+            self.history[self.key + shift].parameters = parameters
 
-            if len(self.parameters) > self.size:
-                self.parameters = self.parameters[-self.size:]
+        if self.size > self.max_size:
+            self.history.pop(self.__forget_key(self.history), None)
+
+        # Update key if step is set to true
+        if step:
+            self.key += 1
 
     # Returns the last x histories
-    def retrieve(self, last):
-        validate.number_range(last, len(self.observations), self.size, min_eq=True, max_eq=True)
+    def retrieve_x(self, last):
+        validate.number_range(last, 1, self.size, min_eq=True, max_eq=True)
 
-        if len(self.observations) == 0:
-            return None
+        return {key: self.history[key] for key in reversed(sorted(self.history.keys()[-last:]))}
 
-        last_o = min(last, len(self.observations))
-        last_r = min(last, len(self.rewards))
-        last_d = min(last, len(self.done))
-        last_a = min(last, len(self.actions))
-        last_p = min(last, len(self.parameters))
+    def last(self):
+        if self.size == 0:
+            return History()
 
-        return {"observations": self.observations[-last_o] if last_o > 0 else [],
-                "rewards": self.rewards[-last_r] if last_r > 0 else [],
-                "done": self.done[-last_d] if last_d > 0 else [],
-                "actions": self.actions[-last_a] if last_a > 0 else [],
-                "parameters": self.parameters[-last_p] if last_p > 0 else []}
+        return self.history[max(self.history.iterkeys())]

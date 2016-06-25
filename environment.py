@@ -10,6 +10,8 @@ from rlagents.agents.dev.knn.KNN2 import EpisodicAgent
 
 ENVS = ["CartPole-v0",
         "Acrobot-v0",
+        "FrozenLake-v0",
+        "FrozenLake8x8-v0"
         "OffSwitchCartpole-v0",
         "SemisuperPendulumNoise-v0",
         "SemisuperPendulumRandom-v0",
@@ -17,7 +19,7 @@ ENVS = ["CartPole-v0",
 
 
 def main():
-    env = gym.make(ENVS[0])
+    env = gym.make(ENVS[2])
 
     # Agent Setup
     # model = DiscreteActionLinearModel(env.action_space, env.observation_space)
