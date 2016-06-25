@@ -2,7 +2,7 @@ from rlagents import validate
 import numpy as np
 
 
-class History:
+class LongTerm:
     def __init__(self, size=100):
         validate.number_range(size, 0, 100000)
 
