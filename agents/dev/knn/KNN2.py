@@ -17,15 +17,13 @@ class EpisodicAgent:
         self.optimiser = optimiser if optimiser is not None else Value(self.model.values, self.memory, gamma=1)
 
     def act(self, observation, reward, done):
-        self.memory.store(reward=reward, done=done, step=True)
-
-        self.optimiser.learn()
 
         action = self.exploration.choose_action(self.model, observation)
 
         if done:
             self.exploration.update()
 
-        self.memory.store(observation=observation, action=action)
+        self.memory.store(observation, action, reward, done)
+        self.optimiser.learn(observation, reward, done)
 
         return action

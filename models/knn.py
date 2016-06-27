@@ -7,6 +7,8 @@ class KNN:
         self.neighbours = neighbours
         self.values = {}
 
+        self.timer = [0, 0, 0, 0]
+
     def action(self, observation):
         action_values = self.action_value(observation)
 
@@ -17,29 +19,29 @@ class KNN:
 
     def action_value(self, observation):
         if len(self.values) > self.neighbours:
-            history = [valid for valid in self.memory.history.values() if
-                       valid.key in self.values and valid.observation is not None]
-
-            obs_history = np.array([item.observation for item in history])
+            last_ep = self.memory.retrieve_last(1)
+            steps = int(last_ep.iloc[0]['Step'])
+            obs_history = self.memory.retrieve_last(self.memory.size).iloc[:-steps]
 
             # exploit: find the few closest states and pick the action that led to highest rewards
             # 1. find k nearest neighbors
             if isinstance(observation, (int, np.int64)):
-                ds = (obs_history - observation) ** 2
+                ds = (obs_history.iloc[:, 5:] - observation) ** 2
 
             else:
-                ds = np.sum((obs_history - observation) ** 2, axis=1)  # L2 distance
+                ds = np.sum((obs_history.iloc[:, 5:] - observation) ** 2, axis=1)  # L2 distance
 
             ix = np.argsort(ds)  # sorts ascending by distance
             ix = ix[:self.neighbours]  # crop to only some number of nearest neighbors
 
-            # find the action that leads to most success. do a vote among actions
+            obs_index = obs_history.index.values
+            actions = obs_history.loc[obs_index[ix]]['Action']
+
             adict = {}
             ndict = {}
             for i in ix:
-                key = history[i].key
-                vv = self.values[key]
-                aa = self.memory.history[key].action
+                vv = self.values[obs_index[i]]
+                aa = actions[i]
                 adict[aa] = adict.get(aa, 0) + vv
                 ndict[aa] = ndict.get(aa, 0) + 1
 

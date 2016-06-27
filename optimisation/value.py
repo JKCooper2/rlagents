@@ -1,18 +1,27 @@
 class Value:
-    def __init__(self, value_dict, memory, gamma=0.95, episodic=True):
+    def __init__(self, value_dict, memory, gamma=0.95):
         self.value_dict = value_dict
         self.memory = memory
         self.gamma = gamma
-        self.episodic = episodic  # Update one per episode (True) or every step (False)
 
-    def learn(self):
-        if self.episodic and self.memory.last().done is False:
+    def learn(self, observation, reward, done):
+        if not done:
             return
 
-        ep_starts = [0] + [key for key, val in self.memory.history.iteritems() if val.done]
-        ep_starts = sorted(ep_starts)
+        last_ep = self.memory.retrieve_last(1)
 
-        v = 0
-        for t in reversed(xrange(ep_starts[-2]+1, ep_starts[-1]+1)):
-            v = self.gamma * v + self.memory.history[t].reward
+        if last_ep is None:
+            return
+
+        steps = int(last_ep.iloc[0]['Step'])
+        ep_steps = self.memory.retrieve_last(steps)
+
+        index = ep_steps.index.values
+
+        # Include this episode (final episode)
+        v = reward
+        self.value_dict[index[-1] + 1] = v
+
+        for t in reversed(index):
+            v = self.gamma * v + ep_steps.loc[t]['Reward']
             self.value_dict[t] = v

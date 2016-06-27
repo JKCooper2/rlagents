@@ -1,69 +1,48 @@
-from rlagents import validate
-from rlagents.memory.history import History
-import numpy as np
+import pandas as pd
 
 
 class LongTerm:
-    def __init__(self, size=100, forget='oldest'):
-        validate.number_range(size, 0, 100000)
-
+    def __init__(self, size=100):
         self.max_size = size
-        self.history = {}
-        self.key = 0  # Memory value
 
-        if forget not in ['oldest', 'newest', 'random']:
-            raise ValueError("Forget strategy is invalid")
-
-        self.forget = forget
+        self.memory = None
+        self.index = 0
+        self.episode = 1
+        self.step = 1
 
     @property
     def size(self):
-        return len(self.history)
+        return len(self.memory) if self.memory is not None else 0
 
-    def __forget_key(self, memory):
-        if self.forget == 'oldest':
-            return min(memory)
+    def store(self, observation, action, reward, done):
+        # Lazy initialisation so column names are correct
+        if self.memory is None:
+            columns = ["Episode", "Step", "Action", "Reward", "Done"] + ["O" + str(i) for i in range(len(observation))]
+            self.memory = pd.DataFrame(columns=columns)
 
-        if self.forget == 'newest':
-            return max(memory)
+        # Apply the reward backwards
+        if self.size > 0:
+            self.memory.loc[self.index - 1, "Reward"] = reward  # Apply the reward backwards so it's correct
 
-        if self.forget == 'random':
-            return np.random.choice(memory.keys())
+        self.memory.loc[self.index] = [self.episode, self.step, action, None, done] + list(observation.ravel())
 
-    def store(self, observation=None, reward=None, done=None, action=None, parameters=None, step=False, shift=0):
-        if (self.key + shift) not in self.history:
-            self.history[self.key + shift] = History(key=self.key+shift)
-
-        if observation is not None:
-            self.history[self.key + shift].observation = observation
-
-        if reward is not None:
-            self.history[self.key + shift].reward = reward
-
-        if done is not None:
-            self.history[self.key + shift].done = done
-
-        if action is not None:
-            self.history[self.key + shift].action = action
-
-        if parameters is not None:
-            self.history[self.key + shift].parameters = parameters
-
+        # If over size remove earliest episode
         if self.size > self.max_size:
-            self.history.pop(self.__forget_key(self.history), None)
+            ep_num = self.memory.iloc[0]['Episode']
+            self.memory = self.memory[self.memory["Episode"] != ep_num]
 
-        # Update key if step is set to true
-        if step:
-            self.key += 1
+        self.step += 1
+        self.index += 1
+
+        if done:
+            self.episode += 1
+            self.step = 1
 
     # Returns the last x histories
-    def retrieve_x(self, last):
-        validate.number_range(last, 1, self.size, min_eq=True, max_eq=True)
+    def retrieve_last(self, last):
+        last = min(last, self.size)
 
-        return {key: self.history[key] for key in reversed(sorted(self.history.keys()[-last:]))}
+        if self.size < 2:
+            return None
 
-    def last(self):
-        if self.size == 0:
-            return History()
-
-        return self.history[max(self.history.iterkeys())]
+        return self.memory[-last-1:-1]  # Only return where reward is known
