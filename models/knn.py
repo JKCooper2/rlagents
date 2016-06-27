@@ -40,8 +40,7 @@ class KNN:
                 key = history[i].key
                 vv = self.values[key]
                 aa = self.memory.history[key].action
-                vnew = adict.get(aa, 0) + vv
-                adict[aa] = vnew
+                adict[aa] = adict.get(aa, 0) + vv
                 ndict[aa] = ndict.get(aa, 0) + 1
 
             for a in adict:  # normalize by counts

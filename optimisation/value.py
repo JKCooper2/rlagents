@@ -13,7 +13,6 @@ class Value:
         ep_starts = sorted(ep_starts)
 
         v = 0
-        for t in reversed(xrange(ep_starts[-2], ep_starts[-1])):
+        for t in reversed(xrange(ep_starts[-2]+1, ep_starts[-1]+1)):
             v = self.gamma * v + self.memory.history[t].reward
-
             self.value_dict[t] = v
