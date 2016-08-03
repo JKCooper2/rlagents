@@ -1,14 +1,6 @@
 import numpy as np
 
 
-def decay(_decay):
-    if not callable(getattr(_decay, "update", None)):
-        raise NotImplementedError("Decay must implement .update()")
-
-    if getattr(_decay, "value", None) is None:
-        raise NotImplementedError("Decay must contain 'value' property")
-
-
 def exploration(_exploration):
     if getattr(_exploration, "value", None) is None:
         raise NotImplementedError("Exploration must contain 'value' property")
