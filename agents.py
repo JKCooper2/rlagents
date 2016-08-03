@@ -1,12 +1,15 @@
 import warnings
+import copy
+import numpy as np
+
 from gym.spaces import tuple_space, box, discrete
+
 from rlagents.functions.decay import DecayBase, FixedDecay
 from rlagents.exploration import EpsilonGreedy, ExplorationBase
-from rlagents.function_approximation.discrete import Discrete
-from rlagents.function_approximation.tiles import SingleTiling
-from rlagents.models.tabular import TabularModel
-from rlagents.models.model_base import ModelBase
-from rlagents.history.history import History
+from rlagents.function_approximation import Discrete, SingleTiling
+from rlagents.models import TabularModel, ModelBase
+from rlagents.history import History
+from rlagents.optimisation.evolutionary import HillClimbing
 
 
 class QLearningAgent(object):
@@ -116,5 +119,86 @@ class QLearningAgent(object):
         if done:
             self.exploration.update()
             self.learning_rate.update()
+
+        return action
+
+
+class EvolutionaryAgent:
+    def __init__(self, action_space, observation_space, model=None, evolution=None, batch_size=1):
+        self.name = "EvolutionaryAgent"
+        self.action_space = action_space
+        self.observation_space = observation_space
+
+        self.batch_size = batch_size  # Number of samples run per batch
+
+        self.batch_test = 0
+        self.batch_results = []
+
+        self.episode_reward = 0
+
+        self.model = self.__set_model(model, action_space, observation_space)
+        self.evolution = self.__set_evolution(evolution)
+
+        self.batch = self.__set_batch()
+
+    @staticmethod
+    def __set_model(model, action_space, observation_space):
+        if model is None:
+            return DiscreteActionLinearModel(action_space, observation_space)
+
+        return model
+
+    @staticmethod
+    def __set_evolution(evolution):
+        if evolution is None:
+            return HillClimbing()
+
+        return evolution
+
+    def __set_batch(self):
+        batch = [copy.copy(self.model) for _ in range(self.batch_size)]
+        for i in range(len(batch)):
+            batch[i].reset()
+
+        return batch
+
+    def __choose_action(self, observation):
+        return self.batch[self.batch_test].action(observation)
+
+    def act(self, observation, reward, done):
+        action = self.__choose_action(observation)
+
+        self.episode_reward += reward
+
+        if done:
+            self.batch_results.append(self.episode_reward)
+            self.episode_reward = 0
+            self.batch_test += 1
+
+            # If all members of current generation have been tested
+            if self.batch_test == self.batch_size:
+                self.batch = self.evolution.next_generation(self.batch, self.batch_results)
+                self.batch_test = 0
+                self.batch_results = []
+
+        return action
+
+
+class RandomAgent(object):
+    def __init__(self, action_space, observation_space):
+        self.action_space = action_space
+        self.observation_space = observation_space
+        self.name = 'random'
+        self.alg_id = "alg_MhPaN5c4TJOFS4tVFh8x3A"
+
+    def act(self, observation, reward, done):
+        return self.__validate_action(self.action_space.sample())
+
+    def __validate_action(self, action):
+        if hasattr(action, '__iter__'):
+            for i in range(len(action)):
+                self.__validate_action(action[i])
+        elif np.isnan(action):
+            action = np.random.normal(0, 1.0)
 
         return action
