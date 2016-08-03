@@ -24,10 +24,12 @@ class LongTerm:
         if self.size > 0:
             self.memory.loc[self.index - 1, "Reward"] = reward  # Apply the reward backwards so it's correct
 
-        self.memory.loc[self.index] = [self.episode, self.step, action, None, done] + list(observation.ravel())
+ # Need to speed this up
+        self.memory.loc[self.index] = [self.episode, self.step, action, None, done] + list(observation)
 
         # If over size remove earliest episode
         if self.size > self.max_size:
+            # Could be faster as well by knowing how many steps in the first ep and just dropping those rows
             ep_num = self.memory.iloc[0]['Episode']
             self.memory = self.memory[self.memory["Episode"] != ep_num]
 

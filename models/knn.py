@@ -31,6 +31,7 @@ class KNN:
             else:
                 ds = np.sum((obs_history.iloc[:, 5:] - observation) ** 2, axis=1)  # L2 distance
 
+#LIKELY ISSUE WITH VV AND AA
             ix = np.argsort(ds)  # sorts ascending by distance
             ix = ix[:self.neighbours]  # crop to only some number of nearest neighbors
 
