@@ -2,9 +2,25 @@ import numpy as np
 from rlagents.functions.decay import FixedDecay
 
 
-class CrossEntropy:
+class EvolutionaryBase(object):
+    def next_generation(self, batch, results):
+        raise NotImplementedError
+
+
+class CrossEntropy(EvolutionaryBase):
     def __init__(self, elite=0.2):
         self.elite = elite  # Percentage of samples selected to generate next batch
+
+    @property
+    def elite(self):
+        return self._elite
+
+    @elite.setter
+    def elite(self, e):
+        if e < 0 or e > 1:
+            raise ValueError("Elite must be between 0 and 1 inclusive")
+
+        self._elite = e
 
     def next_generation(self, batch, results):
         elite_n = int(len(batch) * self.elite)

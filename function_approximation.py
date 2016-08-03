@@ -1,7 +1,16 @@
 import numpy as np
 
 
-class Discrete:
+class FunctionApproximationBase(object):
+    @property
+    def num_discrete(self):
+        raise NotImplementedError
+
+    def convert(self, observation):
+        raise NotImplementedError
+
+
+class DiscreteFA(FunctionApproximationBase):
     def __init__(self, values):
         self.values = values
         self.max = np.prod(self.values)
@@ -10,15 +19,9 @@ class Discrete:
     def num_discrete(self):
         return self.max
 
-    def __validate(self, observation):
-        for i in range(len(self.values)):
-            assert observation[i] < self.values[i]
-
     def convert(self, observation):
         if len(self.values) == 1:
             observation = [observation]
-
-        self.__validate(observation)
 
         array_val = 0
 
@@ -29,7 +32,7 @@ class Discrete:
 
 
 # Single Tiling implementation with equidistant spacing
-class SingleTiling:
+class SingleTiling(FunctionApproximationBase):
     # Dimensions is a list containing tuples of the min and max values of each dimension
     def __init__(self, dimensions, num_tiles, resizeable=False):
         self.dimensions = dimensions

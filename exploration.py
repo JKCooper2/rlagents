@@ -1,4 +1,6 @@
+import warnings
 import numpy as np
+
 from rlagents.functions.decay import DecayBase, FixedDecay
 
 
@@ -6,14 +8,14 @@ class ExplorationBase(object):
     def update(self):
         raise NotImplementedError
 
-    def choose_action(self):
+    def choose_action(self, model, observation):
         raise NotImplementedError
 
 
 class EpsilonGreedy(ExplorationBase):
     def __init__(self, action_space, decay=None):
         self.action_space = action_space
-        self.decay = decay if decay is not None else FixedDecay(0.1, 0, 0.1)
+        self.decay = decay
 
     @property
     def value(self):
@@ -26,7 +28,8 @@ class EpsilonGreedy(ExplorationBase):
     @decay.setter
     def decay(self, d):
         if not isinstance(d, DecayBase):
-            raise TypeError("Decay must be a sub-class of DecayBase")
+            d = FixedDecay(0.1, 0, 0.1)
+            warnings.warn("Decay type invalid, using default. {0}".format(d))
 
         self._decay = d
 
@@ -58,6 +61,17 @@ class Softmax(ExplorationBase):
     def __init__(self, temperature=0.1):
         self.temperature = temperature
 
+    @property
+    def temperature(self):
+        return self._temperature
+
+    @temperature.setter
+    def temperature(self, t):
+        if t < 0 or t > 1:
+            raise ValueError("Temperature must be between 0 and 1 inclusive")
+
+        self._temperature = t
+
     def choose_action(self, model, observation):
         q_s = model.action_value(observation)
 
@@ -85,4 +99,4 @@ class Softmax(ExplorationBase):
         return action
 
     def update(self):
-        pass
+        return

@@ -27,20 +27,20 @@ class DiscreteActionLinearModel(ModelBase):
         self.weights = np.random.randn(self.n_observations * self.n_actions).reshape(self.n_observations, self.n_actions)
         self.bias_weight = np.random.randn(self.n_actions).reshape(1, self.n_actions)
 
-    def __score(self, observation):
+    def score(self, observation):
         return observation.dot(self.weights) + self.bias_weight
 
     # Returns the state value
     def state_value(self, observation):
-        return max(self.__score(observation))
+        return max(self.score(observation))
 
     # Returns the action-value array
     def action_value(self, observation):
-        return self.__score(observation)
+        return self.score(observation)
 
     # Returns the best action
     def action(self, observation):
-        y = self.__score(observation)
+        y = self.score(observation)
         return y.argmax()
 
     def export_values(self):
@@ -76,7 +76,7 @@ class ContinuousActionLinearModel(ModelBase):
         self.weights = np.random.randn(self.n_observations * self.n_actions).reshape(self.n_observations, self.n_actions)
         self.bias_weight = np.random.randn(self.n_actions)
 
-    def __score(self, observation):
+    def score(self, observation):
         if hasattr(observation, 'dot'):
             return observation.dot(self.weights) + self.bias_weight
 
@@ -84,15 +84,15 @@ class ContinuousActionLinearModel(ModelBase):
 
     # Returns the state value
     def state_value(self, observation):
-        return max(self.__score(observation))
+        return max(self.score(observation))
 
     # Returns the action-value array
     def action_value(self, observation):
-        return self.__score(observation)
+        return self.score(observation)
 
     # Returns the best action
     def action(self, observation):
-        action = self.__score(observation)
+        action = self.score(observation)
         return np.clip(action[0], self.action_space.low, self.action_space.high)
 
     def export_values(self):

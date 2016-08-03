@@ -5,7 +5,6 @@ class DecayBase(object):
         self.value = value
         self.decay = decay
 
-
         self.can_update = True
 
     @property
@@ -52,7 +51,7 @@ class DecayBase(object):
 
 
 class FixedDecay(DecayBase):
-    def __init__(self, value=1, decay=0.1, minimum=0):
+    def __init__(self, value=1, decay=0.95, minimum=0):
         DecayBase.__init__(self, value, decay, minimum)
 
     def update(self):
@@ -65,8 +64,8 @@ class FixedDecay(DecayBase):
         return "FixedDecay value: {0}, decay: {1}, min: {2}".format(self.value, self.decay, self.minimum)
 
 
-class EpisodeNumber(DecayBase):
-    def __init__(self, decay=1, minimum=0):
+class EpisodicDecay(DecayBase):
+    def __init__(self, decay=.99, minimum=0):
         DecayBase.__init__(self, 1, decay, minimum)
         self.episode_number = 0
 
