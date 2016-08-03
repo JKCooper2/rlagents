@@ -1,6 +1,6 @@
 import unittest
 
-from rlagents.exploration.epsilon_greedy import EpsilonGreedy
+from rlagents.exploration import EpsilonGreedy
 from rlagents.functions.decay import FixedDecay
 from gym.spaces import Discrete
 

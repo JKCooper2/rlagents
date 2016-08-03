@@ -1,8 +1,8 @@
 import numpy as np
-from collections import defaultdict
+from rlagents.models.model_base import ModelBase
 
 
-class TabularModel:
+class TabularModel(ModelBase):
     def __init__(self, n_actions, observation_fa, mean=0.0, std=1.0):
         self.n_actions = n_actions
         self.n_observations = observation_fa.num_discrete

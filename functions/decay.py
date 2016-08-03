@@ -27,6 +27,9 @@ class FixedDecay(DecayBase):
         if self.value < self.minimum:
             self.value = self.minimum
 
+    def __str__(self):
+        return "FixedDecay value: {0}, decay: {1}, min: {2}".format(self.value, self.decay, self.minimum)
+
 
 class EpisodeNumber(DecayBase):
     def __init__(self, decay=1, minimum=0):
@@ -43,3 +46,6 @@ class EpisodeNumber(DecayBase):
 
         if self.value < self.minimum:
             self.value = self.minimum
+
+    def __str__(self):
+        return "EpisodeNumber value: {0}, decay: {1}, min: {2}, ep num: {3}".format(self.value, self.decay, self.minimum, self.episode_number)

@@ -1,10 +1,6 @@
-from rlagents import validate
-
 
 class History:
     def __init__(self, size=100):
-        validate.number_range(size, 0, 10000)
-
         self.size = size
 
         self.observations = []
@@ -46,7 +42,6 @@ class History:
 
     # Returns the last x histories
     def retrieve(self, last):
-        validate.number_range(last, len(self.observations), self.size, min_eq=True, max_eq=True)
 
         if len(self.observations) == 0:
             return None

@@ -1,42 +1,12 @@
-from rlagents import validate
-
-
-class defaults:
-    @staticmethod
-    def exploration(action_space):
-        from rlagents.exploration.epsilon_greedy import EpsilonGreedy
-        from rlagents.functions.decay import FixedDecay
-        return EpsilonGreedy(action_space, decay=FixedDecay(1, 0.997, 0.05))
-
-    @staticmethod
-    def learningrate():
-        from rlagents.functions.decay import FixedDecay
-        return FixedDecay(1, decay=0.995, minimum=0.05)
-
-    @staticmethod
-    def observationfa(observation_space):
-        from gym.spaces import tuple_space, box, discrete
-        from rlagents.function_approximation.discrete import Discrete
-        from rlagents.function_approximation.tiles import SingleTiling
-
-        if isinstance(observation_space, tuple_space.Tuple):
-            return Discrete([space.n for space in observation_space.spaces])
-
-        elif isinstance(observation_space, box.Box):
-            return SingleTiling(observation_space, 8)
-
-        elif isinstance(observation_space, discrete.Discrete):
-            return Discrete([observation_space.n])
-
-    @staticmethod
-    def model(action_space, observation_space):
-        from rlagents.models.tabular import TabularModel
-        return TabularModel(action_space, observation_space)
-
-    @staticmethod
-    def history():
-        from rlagents.history.history import History
-        return History(size=1)
+import warnings
+from gym.spaces import tuple_space, box, discrete
+from rlagents.functions.decay import DecayBase, FixedDecay
+from rlagents.exploration import EpsilonGreedy, ExplorationBase
+from rlagents.function_approximation.discrete import Discrete
+from rlagents.function_approximation.tiles import SingleTiling
+from rlagents.models.tabular import TabularModel
+from rlagents.models.model_base import ModelBase
+from rlagents.history.history import History
 
 
 class QLearningAgent(object):
@@ -49,19 +19,76 @@ class QLearningAgent(object):
 
         self.discount = discount
 
-        self.learning_rate = learning_rate if learning_rate is not None else defaults.learningrate()
-        self.exploration = exploration if exploration is not None else defaults.exploration(action_space)
-        self.observation_fa = observation_fa if observation_fa is not None else defaults.observationfa(observation_space)
-        self.model = model if model is not None else defaults.model(action_space.n, self.observation_fa)
-        self.history = history if history is not None else defaults.history()
+        self.learning_rate = learning_rate
+        self.exploration = exploration
+        self.observation_fa = observation_fa
+        self.model = model
+        self.history = history
 
-        self.__validate_setup()
+    @property
+    def learning_rate(self):
+        return self._learning_rate
 
-    def __validate_setup(self):
-        validate.decay(self.learning_rate)
-        validate.exploration(self.exploration)
-        validate.model(self.model)
-        validate.observation_fa(self.observation_fa)
+    @learning_rate.setter
+    def learning_rate(self, lr):
+        if not isinstance(lr, DecayBase):
+            lr = FixedDecay(1, decay=0.995, minimum=0.05)
+            warnings.warn('Learning Rate type invalid, using default. ({0})'.format(lr))
+
+        self._learning_rate = lr
+
+    @property
+    def exploration(self):
+        return self._exploration
+
+    @exploration.setter
+    def exploration(self, ex):
+        if not isinstance(ex, ExplorationBase):
+            ex = EpsilonGreedy(self.action_space, decay=FixedDecay(1, 0.997, 0.05))
+            warnings.warn('Exploration type invalid, using default. ({0})'.format(ex))
+
+        self._exploration = ex
+
+    @property
+    def observation_fa(self):
+        return self._observation_fa
+
+    @observation_fa.setter
+    def observation_fa(self, ofa):
+        if ofa is None:
+            if isinstance(self.observation_space, tuple_space.Tuple):
+                ofa = Discrete([space.n for space in self.observation_space.spaces])
+
+            elif isinstance(self.observation_space, box.Box):
+                ofa = SingleTiling(self.observation_space, 8)
+
+            elif isinstance(self.observation_space, discrete.Discrete):
+                ofa = Discrete([self.observation_space.n])
+
+        self._observation_fa = ofa
+
+    @property
+    def model(self):
+        return self._model
+
+    @model.setter
+    def model(self, m):
+        if not isinstance(m, ModelBase):
+            m = TabularModel(self.action_n, self.observation_fa)
+            warnings.warn("Model type invalid, using defaults")
+
+        self._model = m
+
+    @property
+    def history(self):
+        return self._history
+
+    @history.setter
+    def history(self, h):
+        if h is None:
+            h = History(size=1)
+
+        self._history = h
 
     def __choose_action(self, observation):
         return self.exploration.choose_action(self.model, observation)

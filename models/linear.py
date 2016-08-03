@@ -1,7 +1,8 @@
 import numpy as np
+from rlagents.models.model_base import ModelBase
 
 
-class DiscreteActionLinearModel:
+class DiscreteActionLinearModel(ModelBase):
     def __init__(self, action_space, observation_space, bias=True, normalise=False):
         self.observation_space = observation_space
         self.n_observations = observation_space.shape[0]
@@ -50,7 +51,7 @@ class DiscreteActionLinearModel:
         self.bias_weight = np.random.randn(self.n_actions).reshape(1, self.n_actions)
 
 
-class ContinuousActionLinearModel:
+class ContinuousActionLinearModel(ModelBase):
     def __init__(self, action_space, observation_space, bias=True, normalise=False):
         self.observation_space = observation_space
         self.n_observations = observation_space.shape[0] if hasattr(observation_space, 'shape') else observation_space.n
