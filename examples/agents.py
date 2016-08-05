@@ -1,5 +1,5 @@
 from rlagents.agents import RandomAgent, EvolutionaryAgent, StandardAgent
-from rlagents.models import TabularModel, DiscreteActionLinearModel
+from rlagents.models import TabularModel, DiscreteActionLinearModel, ContinuousActionLinearModel
 from rlagents.function_approximation import SingleTiling
 from rlagents.optimisation.evolutionary import CrossEntropy, GeneticAlgorithm, SimulatedAnnealing, HillClimbing
 
@@ -41,5 +41,29 @@ def hillclimbing_discretelinear(action_space, observation_space):
 
 def standard(action_space, observation_space):
     agent = StandardAgent(action_space, observation_space)
+    return agent
+
+
+def crossentropy_continuouslinear(action_space, observation_space):
+    model = ContinuousActionLinearModel(action_space, observation_space)
+    agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=CrossEntropy(), batch_size=40)
+    return agent
+
+
+def geneticalgorithm_continuouslinear(action_space, observation_space):
+    model = ContinuousActionLinearModel(action_space, observation_space)
+    agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=GeneticAlgorithm(), batch_size=40)
+    return agent
+
+
+def simulatedannealing_continuouslinear(action_space, observation_space):
+    model = ContinuousActionLinearModel(action_space, observation_space)
+    agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=SimulatedAnnealing(), batch_size=40)
+    return agent
+
+
+def hillclimbing_continuouslinear(action_space, observation_space):
+    model = ContinuousActionLinearModel(action_space, observation_space)
+    agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=HillClimbing(), batch_size=40)
     return agent
 

@@ -100,7 +100,9 @@ class StandardAgent(AgentBase):
     @model.setter
     def model(self, m):
         if not isinstance(m, ModelBase):
-            m = TabularModel(self.action_space.n, self.observation_fa)
+            n_actions = self.action_space.n if hasattr(self.action_space, 'n') else 8
+
+            m = TabularModel(n_actions, self.observation_fa)
             warnings.warn("Model type invalid, using defaults")
 
         self._model = m

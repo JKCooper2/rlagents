@@ -90,3 +90,6 @@ ENV/
 
 # Pycharm Project
 .idea
+
+# Test output
+examples/tests/agents
