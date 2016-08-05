@@ -1,5 +1,7 @@
 import numpy as np
-from rlagents.functions.decay import FixedDecay
+import warnings
+
+from rlagents.functions.decay import DecayBase, FixedDecay
 
 
 class EvolutionaryBase(object):
@@ -40,7 +42,7 @@ class CrossEntropy(EvolutionaryBase):
         return batch
 
 
-class GeneticAlgorithm:
+class GeneticAlgorithm(EvolutionaryBase):
     def __init__(self, crossover=0.3, mutation_rate=0.1, mutation_amount=0.02, scaling=None):
         self.crossover = crossover
         self.mutation_rate = mutation_rate
@@ -100,13 +102,25 @@ class GeneticAlgorithm:
         raise ValueError("Couldn't select value using roulette")
 
 
-class HillClimbing:
+class HillClimbing(EvolutionaryBase):
     def __init__(self, spread=None, accept_equal=False):
         self.accept_equal = accept_equal
-        self.spread = spread if spread is not None else FixedDecay(0.05, 0, 0)
+        self.spread = spread
 
         self.best_weights = None
         self.best_score = None
+
+    @property
+    def spread(self):
+        return self._spread
+
+    @spread.setter
+    def spread(self, s):
+        if not isinstance(s, DecayBase):
+            s = FixedDecay(0.05, 0, 0)
+            warnings.warn("Decay type invalid, using default. {0}".format(s))
+
+        self._spread = s
 
     def next_generation(self, batch, results):
         best = np.argmax(results)
@@ -118,7 +132,8 @@ class HillClimbing:
         for i in range(len(batch)):
             child = []
             for j in range(len(self.best_weights)):
-                child.append(np.random.normal(self.best_weights[j], abs(self.best_weights[j] * self.spread.value)))
+                std = abs(self.best_weights[j] * self.spread.value) if abs(self.best_weights[j] * self.spread.value) > 0.001 else 0.001
+                child.append(np.random.normal(self.best_weights[j], std))
 
             batch[i].import_values(np.array(child).copy())
 
@@ -127,38 +142,62 @@ class HillClimbing:
         return batch
 
 
-class SimulatedAnnealing:
+class SimulatedAnnealing(EvolutionaryBase):
     def __init__(self, temperature=None, shift=None, bias=None):
-        self.temperature = self.__set_temperature(temperature)
+        self.temperature = temperature
+        self.shift = shift
+        self.bias = bias
+
         self.testing_vals = None
         self.testing_result = 0
-        self.shift = self.__set_shift(shift)
-        self.bias = self.__set_bias(bias)
 
-    @staticmethod
-    def __set_temperature(temperature):
-        if temperature is None:
-            return FixedDecay(10, decay=0.997, minimum=0.1)
+    @property
+    def temperature(self):
+        return self._temperature
 
-        return temperature
+    @temperature.setter
+    def temperature(self, t):
+        if not isinstance(t, DecayBase):
+            t = FixedDecay(10, decay=0.997, minimum=0.1)
+            warnings.warn("Decay type invalid, using default. {0}".format(t))
 
-    @staticmethod
-    def __set_bias(bias):
-        if bias is None:
-            return FixedDecay(1, decay=0.995, minimum=0.01)
+        self._temperature = t
 
-        return bias
+    @property
+    def bias(self):
+        return self._bias
 
-    @staticmethod
-    def __set_shift(shift):
-        if shift is None:
-            return FixedDecay(1, decay=0.995, minimum=0.01)
+    @bias.setter
+    def bias(self, b):
+        if not isinstance(b, DecayBase):
+            b = FixedDecay(1, decay=0.995, minimum=0.01)
+            warnings.warn("Decay type invalid, using default. {0}".format(b))
 
-        return shift
+        self._bias = b
 
-    def __set_vals(self, testing, result):
-        self.testing_vals = testing.copy()
-        self.testing_result = result
+    @property
+    def shift(self):
+        return self._shift
+
+    @shift.setter
+    def shift(self, s):
+        if not isinstance(s, DecayBase):
+            s = FixedDecay(1, decay=0.995, minimum=0.01)
+            warnings.warn("Decay type invalid, using default. {0}".format(s))
+
+        self._shift = s
+
+    @property
+    def testing_vals(self):
+        return self._testing_vals
+
+    @testing_vals.setter
+    def testing_vals(self, t):
+        if t is None:
+            self._testing_vals = None
+
+        else:
+            self._testing_vals = t.copy()
 
     def next_generation(self, batch, results):
         if len(batch) > 1:
@@ -169,19 +208,20 @@ class SimulatedAnnealing:
 
         # No saved value to compare against
         if self.testing_vals is None:
-            self.__set_vals(batch_vals, result)
+            self.testing_vals = batch_vals
+            self.testing_result = result
 
         acceptance_probability = np.e ** ((result - self.testing_result) / self.temperature.value)
         # print self.testing_result, result, self.shift.value, self.temperature.value, acceptance_probability
 
         if np.random.uniform() < acceptance_probability:
-            self.__set_vals(batch_vals, result)
+            self.testing_vals = batch_vals
+            self.testing_result = result
             batch[0].import_values(self.__create_next_test(batch_vals, result))
 
         else:
             batch[0].import_values(self.__create_next_test(self.testing_vals.copy(), self.testing_result))
 
-        # print self.testing_vals, batch[0].export_values()
         self.temperature.update()
         self.bias.update()
         self.shift.update()

@@ -1,10 +1,7 @@
 import gym
 import gym.scoreboard.scoring
 
-from rlagents.agents import EvolutionaryAgent, RandomAgent, StandardAgent
-from rlagents.models import DiscreteActionLinearModel, TabularModel
-from rlagents.optimisation.evolutionary import CrossEntropy
-from rlagents.function_approximation import DiscreteFA
+import rlagents.examples.agents
 
 ENVS = ["CartPole-v0",
         "Acrobot-v0",
@@ -17,16 +14,10 @@ ENVS = ["CartPole-v0",
 def main():
     env = gym.make(ENVS[0])
 
-    # Agent Setup
-    # model = DiscreteActionLinearModel(env.action_space, env.observation_space)
-    # evolution = CrossEntropy(elite=0.2)
-    # batch_size = 40
-    # agent = EvolutionaryAgent(env.action_space, env.observation_space, model=model, evolution=evolution, batch_size=batch_size)
-    # agent = RandomAgent(env.action_space, env.observation_space)
-    agent = StandardAgent(env.action_space, env.observation_space)
+    agent = rlagents.examples.agents.hillclimbing_discretelinear(env.action_space, env.observation_space)
 
     out_dir = '/tmp/' + agent.name + '-results'
-    env.monitor.start(out_dir, force=True, video_callable=False)
+    env.monitor.start(out_dir, force=True)
 
     n_episodes = 1000
     for i_episode in range(n_episodes):

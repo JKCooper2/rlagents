@@ -128,6 +128,9 @@ class TabularModel(ModelBase):
 
         self.reset()
 
+    def score(self, observation):
+        pass
+
     def state_value(self, observation):
         return max(self.weights[observation])
 

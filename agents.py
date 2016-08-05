@@ -13,7 +13,7 @@ from rlagents.optimisation.evolutionary import HillClimbing, EvolutionaryBase
 
 
 class AgentBase(object):
-    def __init__(self, action_space, observation_space, model=None, name=None, alg_id=None):
+    def __init__(self, action_space, observation_space, name=None, alg_id=None):
         self.name = name
         self.alg_id = alg_id
         self.action_space = action_space
@@ -152,6 +152,8 @@ class EvolutionaryAgent(AgentBase):
 
         self.evolution = evolution
         self.episode_reward = 0
+
+        self.model = model
 
         self.batch_size = batch_size  # Number of samples run per batch
         self.batch_test = 0
