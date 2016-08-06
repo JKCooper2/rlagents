@@ -39,7 +39,7 @@ class AgentBase(object):
         raise NotImplementedError
 
 
-class StandardAgent(AgentBase):
+class ExploratoryAgent(AgentBase):
     def __init__(self, action_space, observation_space, discount=0.95, learning_rate=None, exploration=None, observation_fa=None, history=None, model=None):
         AgentBase.__init__(self, action_space, observation_space, name="Standard Agent", alg_id="alg_OwSFZtRR2eZYkcxkG74Q")
 

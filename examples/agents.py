@@ -1,4 +1,4 @@
-from rlagents.agents import RandomAgent, EvolutionaryAgent, StandardAgent
+from rlagents.agents import RandomAgent, EvolutionaryAgent, ExploratoryAgent
 from rlagents.models import TabularModel, DiscreteActionLinearModel, ContinuousActionLinearModel
 from rlagents.function_approximation import SingleTiling
 from rlagents.optimisation.evolutionary import CrossEntropy, GeneticAlgorithm, SimulatedAnnealing, HillClimbing
@@ -40,7 +40,7 @@ def hillclimbing_discretelinear(action_space, observation_space):
 
 
 def standard(action_space, observation_space):
-    agent = StandardAgent(action_space, observation_space)
+    agent = ExploratoryAgent(action_space, observation_space)
     return agent
 
 
