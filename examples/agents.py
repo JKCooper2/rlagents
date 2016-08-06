@@ -29,7 +29,7 @@ def geneticalgorithm_discretelinear(action_space, observation_space):
 
 def simulatedannealing_discretelinear(action_space, observation_space):
     model = DiscreteActionLinearModel(action_space, observation_space)
-    agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=SimulatedAnnealing(), batch_size=40)
+    agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=SimulatedAnnealing(), batch_size=1)
     return agent
 
 
@@ -58,7 +58,7 @@ def geneticalgorithm_continuouslinear(action_space, observation_space):
 
 def simulatedannealing_continuouslinear(action_space, observation_space):
     model = ContinuousActionLinearModel(action_space, observation_space)
-    agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=SimulatedAnnealing(), batch_size=40)
+    agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=SimulatedAnnealing(), batch_size=1)
     return agent
 
 

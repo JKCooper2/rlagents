@@ -10,8 +10,18 @@ class EvolutionaryBase(object):
 
 
 class CrossEntropy(EvolutionaryBase):
+    """
+    Cross Entropy evolution selects the top x% of samples in a batch
+    and generates a new batch from the mean/std of the those samples
+    """
+
     def __init__(self, elite=0.2):
-        self.elite = elite  # Percentage of samples selected to generate next batch
+        """
+        :param elite: float
+            Percentage of samples selected to generate next batch.
+            Must be between 0 and 1
+        """
+        self.elite = elite
 
     @property
     def elite(self):
@@ -25,6 +35,14 @@ class CrossEntropy(EvolutionaryBase):
         self._elite = e
 
     def next_generation(self, batch, results):
+        """
+        Selects the top x% samples from the batch and generates
+        a new batch from the mean/std of the those samples
+        :param batch: list of models
+        :param results: list of rewards for each model
+        :return: list of models
+        """
+
         elite_n = int(len(batch) * self.elite)
 
         batch_vals = [b.export_values() for b in batch]
@@ -43,43 +61,105 @@ class CrossEntropy(EvolutionaryBase):
 
 
 class GeneticAlgorithm(EvolutionaryBase):
-    def __init__(self, crossover=0.3, mutation_rate=0.1, mutation_amount=0.02, scaling=None):
+    """
+    Genetic Algorithm works by selecting two parent samples, with better performing samples
+    having increased likelihood of being selected, and then swapping model values, along with a
+    (normally) small chance of that value being mutated.
+    """
+
+    def __init__(self, crossover=0.3, mutation_rate=0.1, mutation_amount=0.02, scaling=1):
+        """
+
+        :param crossover: float
+            Likelihood of switching parents to get the 'genes' from
+            Range (0, 1)
+        :param mutation_rate: float
+            Likelihood of the current gene being mutated
+            Range (0, 1)
+        :param mutation_amount: float
+            Percent to generate the standard deviation of the mutation from
+            Range (0, 3)
+        :param scaling: float
+            How much results are scaled so high scores appear a lot better than low scores
+            1 means no scaling applied
+            Range (0, 5)
+        """
         self.crossover = crossover
         self.mutation_rate = mutation_rate
         self.mutation_amount = mutation_amount
-        self.scaling = scaling  # How much results are scaled so high scores appear a lot better than low scores
+        self.scaling = scaling
+
+    @property
+    def crossover(self):
+        return self._crossover
+
+    @crossover.setter
+    def crossover(self, c):
+        if c < 0 or c > 1:
+            raise ValueError("Crossover must be between 0 and 1 inclusive")
+
+        self._crossover = c
+
+    @property
+    def mutation_rate(self):
+        return self._mutation_rate
+
+    @mutation_rate.setter
+    def mutation_rate(self, mr):
+        if mr <= 0 or mr >= 1:
+            raise ValueError("Mutation Rate must be between 0 and 1")
+
+        self._mutation_rate = mr
+
+    @property
+    def mutation_amount(self):
+        return self._mutation_amount
+
+    @mutation_amount.setter
+    def mutation_amount(self, ma):
+        if ma <= 0 or ma > 3:
+            raise ValueError("Mutation Amount must be between 0 and 3")
+
+        self._mutation_amount = ma
+
+    @property
+    def scaling(self):
+        return self._scaling
+
+    @scaling.setter
+    def scaling(self, s):
+        if s < 0 or s > 5:
+            raise ValueError("Scaling must be between 0 and 5 inclusive")
+
+        self._scaling = s
+
+    def _scale_results(self, results):
+        """
+        Normalises results within range [0, 1] and applies scaling
+        :param results: list of floats
+        :return: list of floats
+        """
+        result_max = max(results)  # Stops numbers growing too large to handle
+        result_min = min(results) - 0.001  # Stops result ranges that cover 0 causing issues with odd numbers scalings)
+        return [(r - result_min) ** self.scaling / (result_max - result_min) ** self.scaling for r in results]
 
     def next_generation(self, batch, results):
-        if self.scaling is not None:
-            result_max = max(results)   # Stops numbers growing too large to handle
-            result_min = min(results) - 0.001  # Stops result ranges that cover 0 causing issues with odd numbers scalings)
-            results = [(r - result_min) ** self.scaling / (result_max - result_min) ** self.scaling for r in results]
+        """
+        :param batch: list of x models
+        :param results: list of x floats
+        :return: list of x models
+        """
+        results = self._scale_results(results)
 
         gen_size = len(batch)
-        total_score = sum(results)
         batch_vals = [b.export_values() for b in batch]
         next_gen = []
 
         for i in range(gen_size):
-            father = self.__roulette(total_score, results)
-            mother = self.__roulette(total_score, results)
-            current_sel = 1
+            father = self._roulette(results)
+            mother = self._roulette(results)
 
-            child = []
-
-            for j in range(len(batch_vals[0])):
-                if np.random.uniform() <= self.crossover:
-                    current_sel *= -1
-
-                # Use father if current_sel is 1
-                if current_sel == 1:
-                    child.append(batch_vals[father][j])
-
-                else:
-                    child.append(batch_vals[mother][j])
-
-                if np.random.uniform() < self.mutation_rate:
-                    child[j] = np.random.normal(child[j], abs(child[j] * self.mutation_amount))
+            child = self._create_child(batch_vals[father], batch_vals[mother])
 
             next_gen.append(child)
 
@@ -88,9 +168,41 @@ class GeneticAlgorithm(EvolutionaryBase):
 
         return batch
 
+    def _create_child(self, father, mother):
+        """
+        Selected genes from both the father and mother with some mutation
+        :param father: list of x floats
+        :param mother: list of x floats
+        :return: list of x floats
+        """
+        current_sel = 1
+
+        child = []
+
+        for j in range(len(father)):
+            if np.random.uniform() <= self.crossover:
+                current_sel *= -1
+
+            if current_sel == 1:
+                child.append(father[j])
+
+            else:
+                child.append(mother[j])
+
+            if np.random.uniform() < self.mutation_rate:
+                child[j] = np.random.normal(child[j], abs(child[j] * self.mutation_amount))
+
+        return child
+
     @staticmethod
-    def __roulette(total_score, results):
-        selection = np.random.uniform() * total_score
+    def _roulette(results):
+        """
+        Select index based on score
+        :param results: list of floats
+        :return: int
+            Index of parent to choose
+        """
+        selection = np.random.uniform() * sum(results)
         cum_sum = 0
 
         for i, score in enumerate(results):
@@ -98,12 +210,19 @@ class GeneticAlgorithm(EvolutionaryBase):
             if cum_sum >= selection:
                 return i
 
-        print selection, cum_sum
-        raise ValueError("Couldn't select value using roulette")
-
 
 class HillClimbing(EvolutionaryBase):
+    """
+    Hill Climbing works by selecting the best sample from a batch, then
+    generating a new batch from that best sample
+    """
     def __init__(self, spread=None, accept_equal=False):
+        """
+        :param spread: functions.DecayBase
+            Used to determine standard deviation of new best sample
+        :param accept_equal: boolean
+            Whether equal best will replace current best
+        """
         self.accept_equal = accept_equal
         self.spread = spread
 
@@ -116,23 +235,46 @@ class HillClimbing(EvolutionaryBase):
 
     @spread.setter
     def spread(self, s):
-        if not isinstance(s, DecayBase):
+        if s is None:
             s = FixedDecay(0.05, 0, 0)
-            warnings.warn("Decay type invalid, using default. {0}".format(s))
+
+        if not isinstance(s, DecayBase):
+            raise TypeError("Spread not a valid DecayBase")
 
         self._spread = s
 
+    def is_new_best(self, best):
+        if self.best_weights is None:
+            return True
+
+        if best > self.best_score:
+            return True
+
+        if best == self.best_score and self.accept_equal:
+            return True
+
+        return False
+
     def next_generation(self, batch, results):
+        """
+        Finds the best sample
+        Updates the current best if needed
+        Creates new batch based on current best
+
+        :param batch: list of Models
+        :param results: list of floats
+        :return: list of Models
+        """
         best = np.argmax(results)
 
-        if self.best_weights is None or results[best] + int(self.accept_equal) > self.best_score:
+        if self.is_new_best(results[best]):
             self.best_weights = batch[best].export_values().copy()
             self.best_score = results[best]
 
         for i in range(len(batch)):
             child = []
             for j in range(len(self.best_weights)):
-                std = abs(self.best_weights[j] * self.spread.value) if abs(self.best_weights[j] * self.spread.value) > 0.001 else 0.001
+                std = max(abs(self.best_weights[j] * self.spread.value), 0.001)
                 child.append(np.random.normal(self.best_weights[j], std))
 
             batch[i].import_values(np.array(child).copy())
@@ -143,10 +285,22 @@ class HillClimbing(EvolutionaryBase):
 
 
 class SimulatedAnnealing(EvolutionaryBase):
-    def __init__(self, temperature=None, shift=None, bias=None):
+    """
+    Simulated Annealing evolves a single sample by modifying one of it's values it and accepting the
+    updated value with a reducing probability. When it starts (temperature is high)
+    a lower value may be selected, but this reduces over time.
+
+    This is based on the process of hardening metal.
+    """
+    def __init__(self, temperature=None, shift=None):
+        """
+        :param temperature: functions.Decay
+            Influences likelihood of new sample being accepted
+        :param shift: functions.Decay
+            Amount to alter the randomly selected value by
+        """
         self.temperature = temperature
         self.shift = shift
-        self.bias = bias
 
         self.testing_vals = None
         self.testing_result = 0
@@ -157,23 +311,13 @@ class SimulatedAnnealing(EvolutionaryBase):
 
     @temperature.setter
     def temperature(self, t):
-        if not isinstance(t, DecayBase):
+        if t is None:
             t = FixedDecay(10, decay=0.997, minimum=0.1)
-            warnings.warn("Decay type invalid, using default. {0}".format(t))
+
+        if not isinstance(t, DecayBase):
+            raise TypeError("Temperature must be of type DecayBase")
 
         self._temperature = t
-
-    @property
-    def bias(self):
-        return self._bias
-
-    @bias.setter
-    def bias(self, b):
-        if not isinstance(b, DecayBase):
-            b = FixedDecay(1, decay=0.995, minimum=0.01)
-            warnings.warn("Decay type invalid, using default. {0}".format(b))
-
-        self._bias = b
 
     @property
     def shift(self):
@@ -181,15 +325,20 @@ class SimulatedAnnealing(EvolutionaryBase):
 
     @shift.setter
     def shift(self, s):
-        if not isinstance(s, DecayBase):
+        if s is None:
             s = FixedDecay(1, decay=0.995, minimum=0.01)
-            warnings.warn("Decay type invalid, using default. {0}".format(s))
+
+        if not isinstance(s, DecayBase):
+            raise TypeError("Shift must be of type DecayBase")
 
         self._shift = s
 
     @property
     def testing_vals(self):
-        return self._testing_vals
+        if self._testing_vals is None:
+            return None
+
+        return self._testing_vals.copy()
 
     @testing_vals.setter
     def testing_vals(self, t):
@@ -201,7 +350,7 @@ class SimulatedAnnealing(EvolutionaryBase):
 
     def next_generation(self, batch, results):
         if len(batch) > 1:
-            print "Only the first sample is used in simulated annealing"
+            warnings.warn("Simulated Annealing should use batch size of 1")
 
         batch_vals = batch[0].export_values()
         result = results[0]
@@ -217,23 +366,17 @@ class SimulatedAnnealing(EvolutionaryBase):
         if np.random.uniform() < acceptance_probability:
             self.testing_vals = batch_vals
             self.testing_result = result
-            batch[0].import_values(self.__create_next_test(batch_vals, result))
 
-        else:
-            batch[0].import_values(self.__create_next_test(self.testing_vals.copy(), self.testing_result))
+        batch[0].import_values(self.__create_next_test(self.testing_vals))
 
         self.temperature.update()
-        self.bias.update()
         self.shift.update()
 
         return batch
 
-    def __create_next_test(self, batch_vals, result):
+    def __create_next_test(self, batch_vals):
         choice = np.random.randint(len(batch_vals))
 
-        batch_vals[choice] = np.random.normal(batch_vals[choice], self.shift.value)
-
-        if self.bias.value != 0:
-            batch_vals[choice] += np.random.normal(0, self.bias.value)
+        batch_vals[choice] = np.random.normal(batch_vals[choice], abs(batch_vals[choice] * self.shift.value))
 
         return batch_vals

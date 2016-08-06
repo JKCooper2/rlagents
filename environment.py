@@ -2,6 +2,10 @@ import gym
 import gym.scoreboard.scoring
 
 import rlagents.examples.agents
+from rlagents.agents import EvolutionaryAgent
+from rlagents.models import DiscreteActionLinearModel
+from rlagents.optimisation.evolutionary import SimulatedAnnealing
+from rlagents.functions.decay import FixedDecay
 
 ENVS = ["CartPole-v0",
         "Acrobot-v0",
@@ -14,7 +18,16 @@ ENVS = ["CartPole-v0",
 def main():
     env = gym.make(ENVS[0])
 
-    agent = rlagents.examples.agents.hillclimbing_discretelinear(env.action_space, env.observation_space)
+    model = DiscreteActionLinearModel(env.action_space, env.observation_space)
+    evolution = SimulatedAnnealing()
+    batch_size = 1
+    agent = EvolutionaryAgent(env.action_space,
+                              env.observation_space,
+                              model=model,
+                              evolution=evolution,
+                              batch_size=batch_size)
+
+
 
     out_dir = '/tmp/' + agent.name + '-results'
     env.monitor.start(out_dir, force=True)

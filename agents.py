@@ -169,7 +169,7 @@ class EvolutionaryAgent(AgentBase):
     @evolution.setter
     def evolution(self, e):
         if not isinstance(e, EvolutionaryBase):
-            e = HillClimbing
+            e = HillClimbing()
             warnings.warn("Evolution not subclass of EvolutionaryBase, using default HillClimbing")
 
         self._evolution = e
