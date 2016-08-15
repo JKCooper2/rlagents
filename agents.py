@@ -13,9 +13,7 @@ from rlagents.optimisation.evolutionary import HillClimbing, EvolutionaryBase
 
 
 class AgentBase(object):
-    def __init__(self, action_space, observation_space, name=None, alg_id=None):
-        self.name = name
-        self.alg_id = alg_id
+    def __init__(self, action_space, observation_space):
         self.action_space = action_space
         self.observation_space = observation_space
 
@@ -41,7 +39,7 @@ class AgentBase(object):
 
 class ExploratoryAgent(AgentBase):
     def __init__(self, action_space, observation_space, discount=0.95, learning_rate=None, exploration=None, observation_fa=None, memory=None, model=None):
-        AgentBase.__init__(self, action_space, observation_space, name="Standard Agent", alg_id="alg_OwSFZtRR2eZYkcxkG74Q")
+        AgentBase.__init__(self, action_space, observation_space)
 
         self.discount = discount
         self.learning_rate = learning_rate
@@ -153,18 +151,24 @@ class ExploratoryAgent(AgentBase):
 
 
 class EvolutionaryAgent(AgentBase):
-    def __init__(self, action_space, observation_space, model=None, evolution=None, batch_size=1):
-        AgentBase.__init__(self, action_space, observation_space, name="Evolutionary Agent")
+    """
+    Parameters:
+        times_run - Number of times the model values will be run. Essentially 1-indexed repeats
+    """
+    def __init__(self, action_space, observation_space, model=None, evolution=None, batch_size=1, times_run=1):
+        AgentBase.__init__(self, action_space, observation_space)
 
         self.evolution = evolution
         self.episode_reward = 0
 
         self.model = model
 
+        self.times_run = times_run
+
         self.batch_size = batch_size  # Number of samples run per batch
         self.batch_test = 0
         self.batch_results = []
-        self.batch = self.__generate_batch()
+        self.batch = []
 
     @property
     def evolution(self):
@@ -189,17 +193,53 @@ class EvolutionaryAgent(AgentBase):
 
         self._model = m
 
+    @property
+    def times_run(self):
+        return self._times_run
+
+    @times_run.setter
+    def times_run(self, tr):
+        if not isinstance(tr, int) or tr < 1:
+            raise ValueError("Times must be an int >= 1")
+
+        self._times_run = tr
+
     def __generate_batch(self):
         batch = [copy.copy(self.model) for _ in range(self.batch_size)]
         for i in range(len(batch)):
             batch[i].reset()
 
-        return batch
+        # Expands the batch by the required number of times run (order is important)
+        expanded_batch = [b for b in batch for _ in range(self.times_run)]
+
+        return expanded_batch
 
     def __choose_action(self, observation):
         return self.batch[self.batch_test].action(observation)
 
+    def __compress_batch(self):
+        """
+        Combines batches and results together when repeats are used
+        """
+        # If no repeats then compress is unnecessary
+        if self.times_run == 1:
+            return self.batch, self.batch_results
+
+        batch = []
+        batch_results = []
+
+        for i in range(self.batch_size):
+            index = i * self.times_run
+            batch.append(self.batch[index])
+            batch_results.append(float(sum(self.batch_results[index:index + self.times_run]))/self.times_run)
+
+        return batch, batch_results
+
     def act(self, observation, reward, done):
+        # Allows batch_size to be set outside of init
+        if not self.batch:
+            self.batch = self.__generate_batch()
+
         action = self.__choose_action(observation)
 
         self.episode_reward += reward
@@ -210,8 +250,9 @@ class EvolutionaryAgent(AgentBase):
             self.batch_test += 1
 
             # If all members of current generation have been tested
-            if self.batch_test == self.batch_size:
-                self.batch = self.evolution.next_generation(self.batch, self.batch_results)
+            if self.batch_test == self.batch_size * self.times_run:
+                next_batch = self.evolution.next_generation(*self.__compress_batch())
+                self.batch = [b for b in next_batch for _ in range(self.times_run)]
                 self.batch_test = 0
                 self.batch_results = []
 
@@ -220,7 +261,7 @@ class EvolutionaryAgent(AgentBase):
 
 class RandomAgent(AgentBase):
     def __init__(self, action_space, observation_space):
-        AgentBase.__init__(self, action_space, observation_space, name="Random Agent", alg_id = "alg_MhPaN5c4TJOFS4tVFh8x3A")
+        AgentBase.__init__(self, action_space, observation_space)
 
     def act(self, observation, reward, done):
         return self.__validate_action(self.action_space.sample())
