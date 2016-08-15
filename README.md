@@ -3,6 +3,8 @@ RL Agents is a library created in order to break apart reinforcement learning
 agents into their core components, and allow for each of these components to
 be plugged in and out as needed.
 
+NOTE: At the moment still very much a pet project WIP, all implementation details can change at any point
+
 
 ## Structure
 The goal of the structure is to be as modular as possible, that every class
