@@ -355,7 +355,6 @@ class SimulatedAnnealing(EvolutionaryBase):
         batch_vals = batch[0].export_values()
         result = results[0]
 
-        # No saved value to compare against
         if self.testing_vals is None:
             self.testing_vals = batch_vals
             self.testing_result = result

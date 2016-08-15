@@ -8,7 +8,7 @@ from rlagents.functions.decay import DecayBase, FixedDecay
 from rlagents.exploration import EpsilonGreedy, ExplorationBase
 from rlagents.function_approximation import DiscreteFA, SingleTiling
 from rlagents.models import ModelBase, TabularModel
-from rlagents.history import History
+from rlagents.memory import ListMemory
 from rlagents.optimisation.evolutionary import HillClimbing, EvolutionaryBase
 
 
@@ -40,14 +40,14 @@ class AgentBase(object):
 
 
 class ExploratoryAgent(AgentBase):
-    def __init__(self, action_space, observation_space, discount=0.95, learning_rate=None, exploration=None, observation_fa=None, history=None, model=None):
+    def __init__(self, action_space, observation_space, discount=0.95, learning_rate=None, exploration=None, observation_fa=None, memory=None, model=None):
         AgentBase.__init__(self, action_space, observation_space, name="Standard Agent", alg_id="alg_OwSFZtRR2eZYkcxkG74Q")
 
         self.discount = discount
         self.learning_rate = learning_rate
         self.exploration = exploration
         self.observation_fa = observation_fa
-        self.history = history
+        self.memory = memory
 
         self.model = model
 
@@ -108,27 +108,30 @@ class ExploratoryAgent(AgentBase):
         self._model = m
 
     @property
-    def history(self):
-        return self._history
+    def memory(self):
+        return self._memory
 
-    @history.setter
-    def history(self, h):
-        if h is None:
-            h = History(size=1)
+    @memory.setter
+    def memory(self, m):
+        if m is None:
+            m = ListMemory(size=1)
+            m.new(['observations',
+                   'actions',
+                   'done',
+                   'rewards',
+                   'parameters'])
 
-        self._history = h
+        self._memory = m
 
     def __choose_action(self, observation):
         return self.exploration.choose_action(self.model, observation)
 
     def __learn(self, observation_key, reward, done):
-        last_turn = self.history.retrieve(1)
-
-        if last_turn is None:
+        if self.memory.count('observations') == 0:
             return
 
-        prev_obs = last_turn["observations"]
-        prev_action = last_turn["actions"]
+        prev_obs = self.memory.retrieve_last('observations', 1)
+        prev_action = self.memory.retrieve_last('actions', 1)
 
         future = self.model.state_value(observation_key) if not done else 0.0
         self.model.weights[prev_obs][prev_action] += self.learning_rate.value * (reward + self.discount * future - self.model.weights[prev_obs][prev_action])
@@ -139,7 +142,8 @@ class ExploratoryAgent(AgentBase):
         self.__learn(observation_key, reward, done)
         action = self.__choose_action(observation_key)
 
-        self.history.store(observation=observation_key, action=action)
+        self.memory.store('observations', observation_key)
+        self.memory.store('actions', action)
 
         if done:
             self.exploration.update()
