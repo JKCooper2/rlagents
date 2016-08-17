@@ -128,8 +128,10 @@ class ExploratoryAgent(AgentBase):
         if self.memory.count('observations') == 0:
             return
 
-        prev_obs = self.memory.retrieve_last('observations', 1)
-        prev_action = self.memory.retrieve_last('actions', 1)
+        m = self.memory.fetch_last(1)
+
+        prev_obs = m['observations'][0]
+        prev_action = m['actions'][0]
 
         future = self.model.state_value(observation_key) if not done else 0.0
         self.model.weights[prev_obs][prev_action] += self.learning_rate.value * (reward + self.discount * future - self.model.weights[prev_obs][prev_action])
@@ -140,8 +142,7 @@ class ExploratoryAgent(AgentBase):
         self.__learn(observation_key, reward, done)
         action = self.__choose_action(observation_key)
 
-        self.memory.store('observations', observation_key)
-        self.memory.store('actions', action)
+        self.memory.store({'observations': observation_key, 'actions': action})
 
         if done:
             self.exploration.update()

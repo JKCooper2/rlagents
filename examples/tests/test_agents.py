@@ -37,6 +37,7 @@ class TestAgents(unittest.TestCase):
         run_agent(env, rlagents.examples.agents.simulatedannealing_discretelinear(a, o))
         run_agent(env, rlagents.examples.agents.hillclimbing_discretelinear(a, o))
         run_agent(env, rlagents.examples.agents.standard(a, o))
+        run_agent(env, rlagents.examples.agents.standard_pandasmemory(a, o))
         # run_agent(env, rlagents.examples.agents.crossentropy_tabular(a, o))
 
     def test_continuousaction_continuousobservation_agents(self):

@@ -2,6 +2,7 @@ from rlagents.agents import RandomAgent, EvolutionaryAgent, ExploratoryAgent
 from rlagents.models import TabularModel, DiscreteActionLinearModel, ContinuousActionLinearModel
 from rlagents.function_approximation import SingleTiling
 from rlagents.optimisation.evolutionary import CrossEntropy, GeneticAlgorithm, SimulatedAnnealing, HillClimbing
+from rlagents.memory import PandasMemory
 
 
 def random(action_space, observation_space):
@@ -41,6 +42,12 @@ def hillclimbing_discretelinear(action_space, observation_space):
 
 def standard(action_space, observation_space):
     agent = ExploratoryAgent(action_space, observation_space)
+    return agent
+
+
+def standard_pandasmemory(action_space, observation_space):
+    pm = PandasMemory(size=1, columns=['observations', 'actions'])
+    agent = ExploratoryAgent(action_space, observation_space, memory=pm)
     return agent
 
 
