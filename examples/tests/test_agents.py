@@ -17,6 +17,7 @@ def run_agent(env, agent):
         action = agent.act(observation, reward, done)
 
         while not done:
+            print action
             observation, reward, done, info = env.step(action)
             action = agent.act(observation, reward, done)
 

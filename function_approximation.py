@@ -1,76 +1,124 @@
 import numpy as np
+from gym.spaces import Discrete, Box, Tuple
+
+"""
+Function Approximation takes in a space and apply a function to
+a value contained within that space to convert it into another form
+"""
 
 
 class FunctionApproximationBase(object):
-    @property
-    def num_discrete(self):
-        raise NotImplementedError
-
-    def convert(self, observation):
-        raise NotImplementedError
-
-
-class DiscreteFA(FunctionApproximationBase):
-    def __init__(self, values):
-        self.values = values
-        self.max = np.prod(self.values)
+    def __init__(self, space):
+        self.space = space
 
     @property
+    def space_type(self):
+        if isinstance(self.space, Discrete):
+            return 'D'
+
+        elif isinstance(self.space, Box):
+            return 'B'
+
+        elif isinstance(self.space, Tuple):
+            return 'T'
+
+    @property
     def num_discrete(self):
-        return self.max
+        if self.space_type == 'D':
+            return self.space.n
 
-    def convert(self, observation):
-        if len(self.values) == 1:
-            observation = [observation]
+        elif self.space_type == 'B':
+            return self.space.shape[0]
 
-        array_val = 0
+        elif self.space_type == 'T':
+            return len(self.space.spaces)
 
-        for i, obs in enumerate(observation):
-            array_val += obs * max(np.prod(self.values[i+1:]), 1)
+    @property
+    def n_total(self):
+        return self.num_discrete
 
-        return int(array_val)
+    def convert(self, array):
+        raise NotImplementedError
+
+
+class DefaultFA(FunctionApproximationBase):
+    def __init__(self, space):
+        FunctionApproximationBase.__init__(self, space)
+
+    def convert(self, array):
+        return array
+
+
+class DiscreteMaxFA(FunctionApproximationBase):
+    def __init__(self, space):
+        FunctionApproximationBase.__init__(self, space)
+
+    def convert(self, array):
+        action = np.argmax(array)
+
+        if not self.space.contains(action):
+            raise ValueError("Action not contained within space")
+
+        return action
+
+
+class ClipFA(FunctionApproximationBase):
+    def __init__(self, space):
+        FunctionApproximationBase.__init__(self, space)
+
+    def convert(self, array):
+        if self.space_type == 'B':
+            action = np.clip(array[0], self.space.low, self.space.high)
+        else:
+            raise TypeError("Can't clip on space type {0}".format(self.space_type))
+
+        if not self.space.contains(action):
+            raise ValueError("Action not contained within space")
+
+        return action
 
 
 # Single Tiling implementation with equidistant spacing
 class SingleTiling(FunctionApproximationBase):
     # Dimensions is a list containing tuples of the min and max values of each dimension
-    def __init__(self, dimensions, num_tiles, resizeable=False):
-        self.dimensions = dimensions
-        self.dimensions_n = len(self.dimensions.low)
+    def __init__(self, space, num_tiles, resizeable=False):
+        FunctionApproximationBase.__init__(self, space)
+        if self.space_type != 'B':
+            raise TypeError("SingleTiling is only valid for box environments")
+
         self.num_tiles = num_tiles
 
         self.resizeable = resizeable
         self.resize_count = 500
         self.resize_rate = 0.01
 
-        self.total_tiles = self.dimensions_n ** self.num_tiles
-        self.tiles = np.zeros(self.total_tiles)
+        self.tiles = np.zeros(self.n_total)
 
         self.tile_boundaries = self.__set_tile_boundaries()
         self.tile_hits = self.__set_tile_hits()
 
     @property
-    def num_discrete(self):
-        return self.total_tiles
+    def n_total(self):
+        return self.num_discrete ** self.num_tiles
 
     def __set_tile_hits(self):
         if self.resizeable:
-            return [np.zeros(self.num_tiles) for _ in range(self.dimensions_n)]
+            return [np.zeros(self.num_tiles) for _ in range(self.num_discrete)]
 
         return None
 
     def __set_tile_boundaries(self):
         tile_boundaries = []
 
-        for dim in range(self.dimensions_n):
+        for dim in range(self.num_discrete):
             #If np.inf then use range of +-1 (CartPole)
-            if self.dimensions.high[dim] == np.inf:
+            if self.space.high[dim] == np.inf:
                 split = self.__get_split(dim)
                 tile_boundaries.append([-1 + (i + 1) * split for i in range(self.num_tiles - 1)])
 
             else:
                 split = self.__get_split(dim)
-                tile_boundaries.append([self.dimensions.low[dim] + (i + 1) * split for i in range(self.num_tiles - 1)])
+                tile_boundaries.append([self.space.low[dim] + (i + 1) * split for i in range(self.num_tiles - 1)])
 
         return tile_boundaries
 
@@ -78,11 +126,11 @@ class SingleTiling(FunctionApproximationBase):
         return self.tiles[self.__convert_base10(self.__get_tile(observation))]
 
     def __get_split(self, obv_ind):
-        if self.dimensions.high[obv_ind] == np.inf:
+        if self.space.high[obv_ind] == np.inf:
             return 2 / float(self.num_tiles)
 
         else:
-            return (self.dimensions.high[obv_ind] - self.dimensions.low[obv_ind]) / float(self.num_tiles)
+            return (self.space.high[obv_ind] - self.space.low[obv_ind]) / float(self.num_tiles)
 
     def __update_tile_hits(self, tile):
         for i, obv in enumerate(tile):
@@ -124,4 +172,6 @@ class SingleTiling(FunctionApproximationBase):
         return sum([val * self.num_tiles ** (len(tile) - (i + 1)) for i, val in enumerate(tile)])
 
     def convert(self, observation):
-        return self.__convert_base10(self.__get_tile(observation))
+        results = self.__convert_base10(self.__get_tile(observation))
+        print results
+        return results

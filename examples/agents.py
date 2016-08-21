@@ -1,6 +1,6 @@
 from rlagents.agents import RandomAgent, EvolutionaryAgent, ExploratoryAgent
-from rlagents.models import TabularModel, DiscreteActionLinearModel, ContinuousActionLinearModel
-from rlagents.function_approximation import SingleTiling
+from rlagents.models import TabularModel, WeightedLinearModel
+from rlagents.function_approximation import SingleTiling, DefaultFA, ClipFA, DiscreteMaxFA
 from rlagents.optimisation.evolutionary import CrossEntropy, GeneticAlgorithm, SimulatedAnnealing, HillClimbing
 from rlagents.memory import PandasMemory
 
@@ -17,25 +17,25 @@ def crossentropy_tabular(action_space, observation_space):
 
 
 def crossentropy_discretelinear(action_space, observation_space):
-    model = DiscreteActionLinearModel(action_space, observation_space)
+    model = WeightedLinearModel(DiscreteMaxFA(action_space), DefaultFA(observation_space))
     agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=CrossEntropy(), batch_size=40)
     return agent
 
 
 def geneticalgorithm_discretelinear(action_space, observation_space):
-    model = DiscreteActionLinearModel(action_space, observation_space)
+    model = WeightedLinearModel(DiscreteMaxFA(action_space), DefaultFA(observation_space))
     agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=GeneticAlgorithm(), batch_size=40)
     return agent
 
 
 def simulatedannealing_discretelinear(action_space, observation_space):
-    model = DiscreteActionLinearModel(action_space, observation_space)
+    model = WeightedLinearModel(DiscreteMaxFA(action_space), DefaultFA(observation_space))
     agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=SimulatedAnnealing(), batch_size=1)
     return agent
 
 
 def hillclimbing_discretelinear(action_space, observation_space):
-    model = DiscreteActionLinearModel(action_space, observation_space)
+    model = WeightedLinearModel(DiscreteMaxFA(action_space), DefaultFA(observation_space))
     agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=HillClimbing(), batch_size=40)
     return agent
 
@@ -52,25 +52,25 @@ def standard_pandasmemory(action_space, observation_space):
 
 
 def crossentropy_continuouslinear(action_space, observation_space):
-    model = ContinuousActionLinearModel(action_space, observation_space)
+    model = WeightedLinearModel(ClipFA(action_space), DefaultFA(observation_space))
     agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=CrossEntropy(), batch_size=40)
     return agent
 
 
 def geneticalgorithm_continuouslinear(action_space, observation_space):
-    model = ContinuousActionLinearModel(action_space, observation_space)
+    model = WeightedLinearModel(ClipFA(action_space), DefaultFA(observation_space))
     agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=GeneticAlgorithm(), batch_size=40)
     return agent
 
 
 def simulatedannealing_continuouslinear(action_space, observation_space):
-    model = ContinuousActionLinearModel(action_space, observation_space)
+    model = WeightedLinearModel(ClipFA(action_space), DefaultFA(observation_space))
     agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=SimulatedAnnealing(), batch_size=1)
     return agent
 
 
 def hillclimbing_continuouslinear(action_space, observation_space):
-    model = ContinuousActionLinearModel(action_space, observation_space)
+    model = WeightedLinearModel(ClipFA(action_space), DefaultFA(observation_space))
     agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=HillClimbing(), batch_size=40)
     return agent
 

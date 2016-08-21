@@ -93,3 +93,4 @@ ENV/
 
 # Test output
 examples/tests/agents
+examples/tests/examples

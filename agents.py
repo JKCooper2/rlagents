@@ -6,7 +6,7 @@ from gym.spaces import tuple_space, box, discrete
 
 from rlagents.functions.decay import DecayBase, FixedDecay
 from rlagents.exploration import EpsilonGreedy, ExplorationBase
-from rlagents.function_approximation import DiscreteFA, SingleTiling
+from rlagents.function_approximation import DefaultFA, SingleTiling
 from rlagents.models import ModelBase, TabularModel
 from rlagents.memory import ListMemory
 from rlagents.optimisation.evolutionary import HillClimbing, EvolutionaryBase
@@ -38,13 +38,12 @@ class AgentBase(object):
 
 
 class ExploratoryAgent(AgentBase):
-    def __init__(self, action_space, observation_space, discount=0.95, learning_rate=None, exploration=None, observation_fa=None, memory=None, model=None):
+    def __init__(self, action_space, observation_space, discount=0.95, learning_rate=None, exploration=None, memory=None, model=None):
         AgentBase.__init__(self, action_space, observation_space)
 
         self.discount = discount
         self.learning_rate = learning_rate
         self.exploration = exploration
-        self.observation_fa = observation_fa
         self.memory = memory
 
         self.model = model
@@ -74,33 +73,13 @@ class ExploratoryAgent(AgentBase):
         self._exploration = ex
 
     @property
-    def observation_fa(self):
-        return self._observation_fa
-
-    @observation_fa.setter
-    def observation_fa(self, ofa):
-        if ofa is None:
-            if isinstance(self.observation_space, tuple_space.Tuple):
-                ofa = DiscreteFA([space.n for space in self.observation_space.spaces])
-
-            elif isinstance(self.observation_space, box.Box):
-                ofa = SingleTiling(self.observation_space, 8)
-
-            elif isinstance(self.observation_space, discrete.Discrete):
-                ofa = DiscreteFA([self.observation_space.n])
-
-        self._observation_fa = ofa
-
-    @property
     def model(self):
         return self._model
 
     @model.setter
     def model(self, m):
         if not isinstance(m, ModelBase):
-            n_actions = self.action_space.n if hasattr(self.action_space, 'n') else 8
-
-            m = TabularModel(n_actions, self.observation_fa)
+            m = TabularModel(DefaultFA(self.action_space), SingleTiling(self.observation_space, 6))
             warnings.warn("Model type invalid, using defaults")
 
         self._model = m
@@ -124,7 +103,7 @@ class ExploratoryAgent(AgentBase):
     def __choose_action(self, observation):
         return self.exploration.choose_action(self.model, observation)
 
-    def __learn(self, observation_key, reward, done):
+    def __learn(self, observation, reward, done):
         if self.memory.count('observations') == 0:
             return
 
@@ -133,16 +112,15 @@ class ExploratoryAgent(AgentBase):
         prev_obs = m['observations'][0]
         prev_action = m['actions'][0]
 
-        future = self.model.state_value(observation_key) if not done else 0.0
+        future = self.model.state_value(observation) if not done else 0.0
+
         self.model.weights[prev_obs][prev_action] += self.learning_rate.value * (reward + self.discount * future - self.model.weights[prev_obs][prev_action])
 
     def act(self, observation, reward, done):
-        observation_key = self.observation_fa.convert(observation)
+        self.__learn(observation, reward, done)
+        action = self.__choose_action(observation)
 
-        self.__learn(observation_key, reward, done)
-        action = self.__choose_action(observation_key)
-
-        self.memory.store({'observations': observation_key, 'actions': action})
+        self.memory.store({'observations': observation, 'actions': action})
 
         if done:
             self.exploration.update()
