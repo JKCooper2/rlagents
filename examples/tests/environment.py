@@ -14,9 +14,11 @@ def main():
     agent.times_run = 1
     agent.batch_size = 20
 
-    env.monitor.start("examples/tests/agents/", force=True, video_callable=False)
+    agent = rlagents.examples.agents.standard(env.action_space, env.observation_space)
 
-    for i_episode in range(500):
+    env.monitor.start("examples/tests/agents/", force=True)#, video_callable=False)
+
+    for i_episode in range(5000):
         observation = env.reset()
         reward = 0
         done = False

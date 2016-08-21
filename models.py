@@ -17,6 +17,9 @@ class ModelBase(object):
     def score(self, observation):
         raise NotImplementedError
 
+    def state_action_value(self, observation, action):
+        raise NotImplementedError
+
     def export_values(self):
         raise NotImplementedError
 
@@ -48,16 +51,19 @@ class WeightedLinearModel(ModelBase):
     # Returns the action-value array
     def action_value(self, observation):
         observation = self.observation_fa.convert(observation)
-        return self.action_fa.convert(self.score(observation))
+        return self.score(observation)
 
     # Returns best action to perform along with it's value
     def action(self, observation):
-        observation = self.observation_fa.convert(observation)
-        return self.action_fa.convert(self.score(observation))
+        return self.action_fa.convert(self.action_value(observation))
 
     def state_value(self, observation):
         observation = self.observation_fa.convert(observation)
         return max(self.score(observation))
+
+    # TODO: SHOULD BE ABLE TO HANDLE CONTINUOUS VALUES
+    def state_action_value(self, observation, action):
+        return self.action_value(observation)[action]
 
     def export_values(self):
         values = np.concatenate((self.weights, self.bias_weight)) if self.bias else self.weights
@@ -107,6 +113,15 @@ class TabularModel(ModelBase):
     def action(self, observation):
         observation = self.observation_fa.convert(observation)
         return np.argmax(self.weights[observation])
+
+    def state_action_value(self, observation, action):
+        # print self.action_value(observation)
+        # print "ACTION", action
+        return self.action_value(observation)[action]
+
+    def update(self, observation, action, value):
+        observation = self.observation_fa.convert(observation)
+        self.weights[observation][action] = value
 
     def export_values(self):
         values = []

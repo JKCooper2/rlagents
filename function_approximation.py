@@ -38,6 +38,7 @@ class FunctionApproximationBase(object):
         return self.num_discrete
 
     def convert(self, array):
+        """"""
         raise NotImplementedError
 
 
@@ -173,5 +174,4 @@ class SingleTiling(FunctionApproximationBase):
 
     def convert(self, observation):
         results = self.__convert_base10(self.__get_tile(observation))
-        print results
         return results

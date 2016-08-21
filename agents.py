@@ -2,13 +2,13 @@ import warnings
 import copy
 import numpy as np
 
-from gym.spaces import tuple_space, box, discrete
-
-from rlagents.functions.decay import DecayBase, FixedDecay
+from rlagents.functions.decay import FixedDecay
 from rlagents.exploration import EpsilonGreedy, ExplorationBase
 from rlagents.function_approximation import DefaultFA, SingleTiling
 from rlagents.models import ModelBase, TabularModel
 from rlagents.memory import ListMemory
+from rlagents.optimisation import OptimiserBase
+from rlagents.optimisation.exploratory import MonteCarlo
 from rlagents.optimisation.evolutionary import HillClimbing, EvolutionaryBase
 
 
@@ -38,27 +38,15 @@ class AgentBase(object):
 
 
 class ExploratoryAgent(AgentBase):
-    def __init__(self, action_space, observation_space, discount=0.95, learning_rate=None, exploration=None, memory=None, model=None):
+    def __init__(self, action_space, observation_space, exploration=None, memory=None, model=None, optimiser=None):
         AgentBase.__init__(self, action_space, observation_space)
 
-        self.discount = discount
-        self.learning_rate = learning_rate
         self.exploration = exploration
         self.memory = memory
 
         self.model = model
 
-    @property
-    def learning_rate(self):
-        return self._learning_rate
-
-    @learning_rate.setter
-    def learning_rate(self, lr):
-        if not isinstance(lr, DecayBase):
-            lr = FixedDecay(1, decay=0.995, minimum=0.05)
-            warnings.warn('Learning Rate type invalid, using default. ({0})'.format(lr))
-
-        self._learning_rate = lr
+        self.optimiser = optimiser
 
     @property
     def exploration(self):
@@ -79,7 +67,7 @@ class ExploratoryAgent(AgentBase):
     @model.setter
     def model(self, m):
         if not isinstance(m, ModelBase):
-            m = TabularModel(DefaultFA(self.action_space), SingleTiling(self.observation_space, 6))
+            m = TabularModel(DefaultFA(self.action_space), SingleTiling(self.observation_space, 8))
             warnings.warn("Model type invalid, using defaults")
 
         self._model = m
@@ -91,7 +79,7 @@ class ExploratoryAgent(AgentBase):
     @memory.setter
     def memory(self, m):
         if m is None:
-            m = ListMemory(size=1)
+            m = ListMemory(size=2)
             m.new(['observations',
                    'actions',
                    'done',
@@ -100,31 +88,33 @@ class ExploratoryAgent(AgentBase):
 
         self._memory = m
 
-    def __choose_action(self, observation):
-        return self.exploration.choose_action(self.model, observation)
+    @property
+    def optimiser(self):
+        return self._optimiser
 
-    def __learn(self, observation, reward, done):
-        if self.memory.count('observations') == 0:
-            return
+    @optimiser.setter
+    def optimiser(self, o):
+        if not isinstance(o, OptimiserBase):
+            o = MonteCarlo()
+            # raise TypeError("Optimiser is not a valid OptimiserBase")
 
-        m = self.memory.fetch_last(1)
+        self._optimiser = o
 
-        prev_obs = m['observations'][0]
-        prev_action = m['actions'][0]
-
-        future = self.model.state_value(observation) if not done else 0.0
-
-        self.model.weights[prev_obs][prev_action] += self.learning_rate.value * (reward + self.discount * future - self.model.weights[prev_obs][prev_action])
+        # Probably not the best idea to require ordering of variable loading but simpler than
+        # passing through variables each time
+        self._optimiser.model = self.model
+        self._optimiser.memory = self.memory
 
     def act(self, observation, reward, done):
-        self.__learn(observation, reward, done)
-        action = self.__choose_action(observation)
+        self.memory.store({'observations': observation, 'done': done, 'rewards': reward})
 
-        self.memory.store({'observations': observation, 'actions': action})
+        self.optimiser.run()
+
+        action = self.exploration.choose_action(self.model, observation)
+        self.memory.store({'actions': action})
 
         if done:
             self.exploration.update()
-            self.learning_rate.update()
 
         return action
 
