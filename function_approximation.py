@@ -28,17 +28,21 @@ class FunctionApproximationBase(object):
             return self.space.n
 
         elif self.space_type == 'B':
-            return self.space.shape[0]
+            return len(self.space.low.flatten())
 
         elif self.space_type == 'T':
             return len(self.space.spaces)
 
     @property
     def n_total(self):
+        """
+        Allows for FA to over-ride the number return while not removing
+        accessibility to true space size
+        """
         return self.num_discrete
 
     def convert(self, array):
-        """"""
+        """Takes in an action-value array"""
         raise NotImplementedError
 
 

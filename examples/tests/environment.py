@@ -5,9 +5,6 @@ import rlagents.examples.agents
 
 
 def main():
-    # gym.pull('jkcooper2/gym-envs/EightPuzzle', version=0)
-    # env = gym.make("jkcooper2/EightPuzzle-v0")
-
     env = gym.make("CartPole-v0")
 
     agent = rlagents.examples.agents.crossentropy_discretelinear(env.action_space, env.observation_space)

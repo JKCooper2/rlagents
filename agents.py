@@ -184,7 +184,7 @@ class EvolutionaryAgent(AgentBase):
         return expanded_batch
 
     def __choose_action(self, observation):
-        return self.batch[self.batch_test].action(observation)
+        return self.batch[self.batch_test].best_action(observation)
 
     def __compress_batch(self):
         """

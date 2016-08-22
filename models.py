@@ -14,10 +14,20 @@ class ModelBase(object):
     def n_actions(self):
         return self.action_fa.num_discrete
 
-    def score(self, observation):
+    def best_action(self, observation):
+        """Returns the action corresponding to the highest value in a state"""
+        raise NotImplementedError
+
+    def action_value(self, observation):
+        """Returns an array of values corresponding to possible actions in a state"""
+        raise NotImplementedError
+
+    def state_value(self, observation):
+        """Returns the value for being in a particular state assuming the best action is taken"""
         raise NotImplementedError
 
     def state_action_value(self, observation, action):
+        """Returns the expected value for performing an action in state"""
         raise NotImplementedError
 
     def export_values(self):
@@ -41,28 +51,26 @@ class WeightedLinearModel(ModelBase):
         self.normalise = normalise
 
         self.weights = np.random.randn(self.n_observations * self.n_actions).reshape(self.n_observations, self.n_actions)
-        self.bias_weight = np.random.randn(self.n_actions).reshape(1, self.n_actions)
-
-    def score(self, observation):
-        observation = self.observation_fa.convert(observation)
-        score = observation.dot(self.weights) + self.bias_weight
-        return score[0]
+        self.bias_weight = np.random.randn(self.n_actions).reshape(1, self.n_actions) if self.bias else np.zeros(self.n_actions).reshape(1, self.n_actions)
 
     # Returns the action-value array
     def action_value(self, observation):
         observation = self.observation_fa.convert(observation)
-        return self.score(observation)
+        score = observation.dot(self.weights) + self.bias_weight
+        return score[0]
 
     # Returns best action to perform along with it's value
-    def action(self, observation):
+    def best_action(self, observation):
         return self.action_fa.convert(self.action_value(observation))
 
     def state_value(self, observation):
         observation = self.observation_fa.convert(observation)
-        return max(self.score(observation))
+        return max(self.action_value(observation))
 
-    # TODO: SHOULD BE ABLE TO HANDLE CONTINUOUS VALUES
     def state_action_value(self, observation, action):
+        if not isinstance(action, int):
+            raise TypeError("State Action Value current only accepts ints")
+
         return self.action_value(observation)[action]
 
     def export_values(self):
@@ -76,15 +84,14 @@ class WeightedLinearModel(ModelBase):
         if self.normalise:
             weights /= np.linalg.norm(weights)
 
-        self.weights = np.array(
-            weights[:self.n_observations * self.n_actions].reshape(self.n_observations, self.n_actions))
+        self.weights = np.array(weights[:self.n_observations * self.n_actions].reshape(self.n_observations, self.n_actions))
 
         if self.bias:
             self.bias_weight = np.array(weights[self.n_observations * self.n_actions:].reshape(1, self.n_actions))
 
     def reset(self):
         self.weights = np.random.randn(self.n_observations * self.n_actions).reshape(self.n_observations, self.n_actions)
-        self.bias_weight = np.random.randn(self.n_actions).reshape(1, self.n_actions)
+        self.bias_weight = np.random.randn(self.n_actions).reshape(1, self.n_actions) if self.bias else np.zeros(self.n_actions)
 
 
 class TabularModel(ModelBase):
@@ -99,9 +106,6 @@ class TabularModel(ModelBase):
 
         self.reset()
 
-    def score(self, observation):
-        pass
-
     def state_value(self, observation):
         observation = self.observation_fa.convert(observation)
         return max(self.weights[observation])
@@ -110,13 +114,11 @@ class TabularModel(ModelBase):
         observation = self.observation_fa.convert(observation)
         return self.weights[observation]
 
-    def action(self, observation):
+    def best_action(self, observation):
         observation = self.observation_fa.convert(observation)
         return np.argmax(self.weights[observation])
 
     def state_action_value(self, observation, action):
-        # print self.action_value(observation)
-        # print "ACTION", action
         return self.action_value(observation)[action]
 
     def update(self, observation, action, value):
