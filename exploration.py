@@ -3,12 +3,18 @@ import numpy as np
 
 from rlagents.functions.decay import DecayBase, FixedDecay
 
+"""
+Exploration biases the action-values returned by a model (in the form of an array or in future a distribution)
+"""
+
 
 class ExplorationBase(object):
+    model = None
+
     def update(self):
         raise NotImplementedError
 
-    def choose_action(self, model, observation):
+    def bias_action_value(self, observation):
         raise NotImplementedError
 
 
@@ -33,31 +39,27 @@ class EpsilonGreedy(ExplorationBase):
 
         self._decay = d
 
-    @property
-    def action_space(self):
-        return self._action_space
-
-    @action_space.setter
-    def action_space(self, a):
-        self._action_space = a
-
     def __str__(self):
         return "EpsilonGreedy decay: {0}".format(self.decay)
 
-    def choose_action(self, model, observation):
+    def bias_action_value(self, observation):
+        q_s = self.model.action_value(observation)
+
         if np.random.uniform() < self.value:
-            return self.action_space.sample()
+            # Select a random action and max it the best action
+            q_s[np.random.randint(len(q_s))] = max(q_s) + 1
 
-        action = model.action(observation)
-
-        return action
+        return q_s
 
     def update(self):
         self.decay.update()
 
 
-# Softmax selects the action to take based on the actions value relative to other actions
 class Softmax(ExplorationBase):
+    """
+    Softmax selects the action to take based on the actions value relative to other actions
+    Negative values are very unlikely to be chosen
+    """
     def __init__(self, temperature=0.1):
         self.temperature = temperature
 
@@ -72,14 +74,14 @@ class Softmax(ExplorationBase):
 
         self._temperature = t
 
-    def choose_action(self, model, observation):
-        q_s = model.action_value(observation)
+    def bias_action_value(self, observation):
+        q_s = self.model.action_value(observation)
 
         probabilities = []
 
         for action in range(len(q_s)):
             numerator = np.e ** (q_s[action]/self.temperature)
-            denominator = sum([np.e ** (q_s[other]/self.temperature) for other in range(len(q_s))])
+            denominator = sum([np.e ** (q/self.temperature) for q in q_s])
             chance = numerator / denominator
 
             probabilities.append(chance)
@@ -93,10 +95,10 @@ class Softmax(ExplorationBase):
             cum_sum += value
 
             if cum_sum >= choice:
-                action = act
+                q_s[act] = max(q_s) + 1
                 break
 
         return action
 
     def update(self):
-        return
+        pass

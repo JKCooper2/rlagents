@@ -14,10 +14,6 @@ class ModelBase(object):
     def n_actions(self):
         return self.action_fa.num_discrete
 
-    def best_action(self, observation):
-        """Returns the action corresponding to the highest value in a state"""
-        raise NotImplementedError
-
     def action_value(self, observation):
         """Returns an array of values corresponding to possible actions in a state"""
         raise NotImplementedError
@@ -58,10 +54,6 @@ class WeightedLinearModel(ModelBase):
         observation = self.observation_fa.convert(observation)
         score = observation.dot(self.weights) + self.bias_weight
         return score[0]
-
-    # Returns best action to perform along with it's value
-    def best_action(self, observation):
-        return self.action_fa.convert(self.action_value(observation))
 
     def state_value(self, observation):
         observation = self.observation_fa.convert(observation)
@@ -113,10 +105,6 @@ class TabularModel(ModelBase):
     def action_value(self, observation):
         observation = self.observation_fa.convert(observation)
         return self.weights[observation]
-
-    def best_action(self, observation):
-        observation = self.observation_fa.convert(observation)
-        return np.argmax(self.weights[observation])
 
     def state_action_value(self, observation, action):
         return self.action_value(observation)[action]

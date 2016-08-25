@@ -53,24 +53,24 @@ def standard_pandasmemory(action_space, observation_space):
 
 def crossentropy_continuouslinear(action_space, observation_space):
     model = WeightedLinearModel(ClipFA(action_space), DefaultFA(observation_space))
-    agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=CrossEntropy(), batch_size=40)
+    agent = EvolutionaryAgent(action_space, observation_space, action_fa=ClipFA(action_space), model=model, evolution=CrossEntropy(), batch_size=40)
     return agent
 
 
 def geneticalgorithm_continuouslinear(action_space, observation_space):
     model = WeightedLinearModel(ClipFA(action_space), DefaultFA(observation_space))
-    agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=GeneticAlgorithm(), batch_size=40)
+    agent = EvolutionaryAgent(action_space, observation_space, action_fa=ClipFA(action_space), model=model, evolution=GeneticAlgorithm(), batch_size=40)
     return agent
 
 
 def simulatedannealing_continuouslinear(action_space, observation_space):
     model = WeightedLinearModel(ClipFA(action_space), DefaultFA(observation_space))
-    agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=SimulatedAnnealing(), batch_size=1)
+    agent = EvolutionaryAgent(action_space, observation_space, action_fa=ClipFA(action_space), model=model, evolution=SimulatedAnnealing(), batch_size=1)
     return agent
 
 
 def hillclimbing_continuouslinear(action_space, observation_space):
     model = WeightedLinearModel(ClipFA(action_space), DefaultFA(observation_space))
-    agent = EvolutionaryAgent(action_space, observation_space, model=model, evolution=HillClimbing(), batch_size=40)
+    agent = EvolutionaryAgent(action_space, observation_space, action_fa=ClipFA(action_space), model=model, evolution=HillClimbing(), batch_size=40)
     return agent
 

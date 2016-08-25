@@ -73,12 +73,9 @@ class ClipFA(FunctionApproximationBase):
 
     def convert(self, array):
         if self.space_type == 'B':
-            action = np.clip(array[0], self.space.low, self.space.high)
+            action = np.clip(array, self.space.low, self.space.high)
         else:
             raise TypeError("Can't clip on space type {0}".format(self.space_type))
-
-        if not self.space.contains(action):
-            raise ValueError("Action not contained within space")
 
         return action
 

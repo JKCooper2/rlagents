@@ -24,9 +24,6 @@ class TestWeightedLinearModel(unittest.TestCase):
     def test_action_value(self):
         self.assertListEqual(self.m.action_value(self.observation).tolist(), np.array([5.5890863043291095, 3.904665726893728]).tolist())
 
-    def test_best_action(self):
-        self.assertEqual(self.m.best_action(self.observation), 0)
-
     def test_state_value(self):
         self.assertEqual(self.m.state_value(self.observation), 5.5890863043291095)
 

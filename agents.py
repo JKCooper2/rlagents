@@ -4,7 +4,7 @@ import numpy as np
 
 from rlagents.functions.decay import FixedDecay
 from rlagents.exploration import EpsilonGreedy, ExplorationBase
-from rlagents.function_approximation import DefaultFA, SingleTiling
+from rlagents.function_approximation import DefaultFA, SingleTiling, FunctionApproximationBase, DiscreteMaxFA
 from rlagents.models import ModelBase, TabularModel
 from rlagents.memory import ListMemory
 from rlagents.optimisation import OptimiserBase
@@ -13,9 +13,12 @@ from rlagents.optimisation.evolutionary import HillClimbing, EvolutionaryBase
 
 
 class AgentBase(object):
-    def __init__(self, action_space, observation_space):
+    def __init__(self, action_space, observation_space, action_fa, model):
         self.action_space = action_space
         self.observation_space = observation_space
+
+        self.action_fa = action_fa
+        self.model = model
 
     @property
     def action_space(self):
@@ -33,19 +36,42 @@ class AgentBase(object):
     def observation_space(self, o_s):
         self._observation_space = o_s
 
+    @property
+    def model(self):
+        return self._model
+
+    @model.setter
+    def model(self, m):
+        if not isinstance(m, ModelBase):
+            m = TabularModel(DefaultFA(self.action_space), SingleTiling(self.observation_space, 8))
+            warnings.warn("Model type invalid, using defaults")
+
+        self._model = m
+
+    @property
+    def action_fa(self):
+        return self._action_fa
+
+    @action_fa.setter
+    def action_fa(self, afa):
+        if not isinstance(afa, FunctionApproximationBase):
+            afa = DiscreteMaxFA(self.action_space)  # For now as most envs testing are discrete
+            warnings.warn("action_fa must inherit from FunctionApproximationBase using defaults")
+
+        self._action_fa = afa
+
     def act(self, observation, reward, done):
         raise NotImplementedError
 
 
 class ExploratoryAgent(AgentBase):
-    def __init__(self, action_space, observation_space, exploration=None, memory=None, model=None, optimiser=None):
-        AgentBase.__init__(self, action_space, observation_space)
+    def __init__(self, action_space, observation_space, action_fa=None, model=None, exploration=None, memory=None, optimiser=None):
+        AgentBase.__init__(self, action_space, observation_space, action_fa, model)
+
+        self.memory = memory
+        self.action_fa = action_fa
 
         self.exploration = exploration
-        self.memory = memory
-
-        self.model = model
-
         self.optimiser = optimiser
 
     @property
@@ -58,19 +84,8 @@ class ExploratoryAgent(AgentBase):
             ex = EpsilonGreedy(self.action_space, decay=FixedDecay(1, 0.997, 0.05))
             warnings.warn('Exploration type invalid, using default. ({0})'.format(ex))
 
+        ex.model = self.model
         self._exploration = ex
-
-    @property
-    def model(self):
-        return self._model
-
-    @model.setter
-    def model(self, m):
-        if not isinstance(m, ModelBase):
-            m = TabularModel(DefaultFA(self.action_space), SingleTiling(self.observation_space, 8))
-            warnings.warn("Model type invalid, using defaults")
-
-        self._model = m
 
     @property
     def memory(self):
@@ -110,7 +125,9 @@ class ExploratoryAgent(AgentBase):
 
         self.optimiser.run()
 
-        action = self.exploration.choose_action(self.model, observation)
+        action_values = self.exploration.bias_action_value(observation)
+        action = self.action_fa.convert(action_values)
+
         self.memory.store({'actions': action})
 
         if done:
@@ -122,15 +139,14 @@ class ExploratoryAgent(AgentBase):
 class EvolutionaryAgent(AgentBase):
     """
     Parameters:
+        batch_size - Number of models used in each batch
         times_run - Number of times the model values will be run. Essentially 1-indexed repeats
     """
-    def __init__(self, action_space, observation_space, model=None, evolution=None, batch_size=1, times_run=1):
-        AgentBase.__init__(self, action_space, observation_space)
+    def __init__(self, action_space, observation_space, action_fa=None, model=None, evolution=None, batch_size=1, times_run=1):
+        AgentBase.__init__(self, action_space, observation_space, action_fa, model)
 
         self.evolution = evolution
         self.episode_reward = 0
-
-        self.model = model
 
         self.times_run = times_run
 
@@ -152,17 +168,6 @@ class EvolutionaryAgent(AgentBase):
         self._evolution = e
 
     @property
-    def model(self):
-        return self._model
-
-    @model.setter
-    def model(self, m):
-        if not isinstance(m, ModelBase):
-            raise TypeError("Model not a valid ModelBase")
-
-        self._model = m
-
-    @property
     def times_run(self):
         return self._times_run
 
@@ -182,9 +187,6 @@ class EvolutionaryAgent(AgentBase):
         expanded_batch = [b for b in batch for _ in range(self.times_run)]
 
         return expanded_batch
-
-    def __choose_action(self, observation):
-        return self.batch[self.batch_test].best_action(observation)
 
     def __compress_batch(self):
         """
@@ -209,7 +211,8 @@ class EvolutionaryAgent(AgentBase):
         if not self.batch:
             self.batch = self.__generate_batch()
 
-        action = self.__choose_action(observation)
+        action_values = self.batch[self.batch_test].action_value(observation)
+        action = self.action_fa.convert(action_values)
 
         self.episode_reward += reward
 
@@ -230,7 +233,9 @@ class EvolutionaryAgent(AgentBase):
 
 class RandomAgent(AgentBase):
     def __init__(self, action_space, observation_space):
-        AgentBase.__init__(self, action_space, observation_space)
+        action_fa = DefaultFA(action_space)
+        observation_fa = DefaultFA(observation_space)
+        AgentBase.__init__(self, action_space, observation_space, action_fa=action_fa, model=ModelBase(action_fa, observation_fa))
 
     def act(self, observation, reward, done):
         return self.__validate_action(self.action_space.sample())
