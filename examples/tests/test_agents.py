@@ -4,34 +4,25 @@ import logging
 import warnings
 
 import rlagents.examples.agents
+from rlagents.env_manager import EnvManager
 
 
-def run_agent(env, agent):
-    env.monitor.start("examples/tests/agents/", force=True, video_callable=False)
-
-    for i_episode in range(3):
-        observation = env.reset()
-        reward = 0
-        done = False
-
-        action = agent.act(observation, reward, done)
-
-        while not done:
-            observation, reward, done, info = env.step(action)
-            action = agent.act(observation, reward, done)
+def run_agent(env, agents):
+    em = EnvManager(env, agents)
+    em.run(n_episodes=3, video_callable=False, print_stats=False)
 
 
 class TestAgents(unittest.TestCase):
     def test_discreteaction_continuousobservation_agents(self):
-        env = gym.make("CartPole-v0")
+        env = "CartPole-v0"
+        genv = gym.make(env)
 
-        a = env.action_space
-        o = env.observation_space
+        a = genv.action_space
+        o = genv.observation_space
 
         logging.disable(logging.CRITICAL)
         warnings.filterwarnings("ignore")
 
-        run_agent(env, rlagents.examples.agents.random(a, o))
         run_agent(env, rlagents.examples.agents.crossentropy_discretelinear(a, o))
         run_agent(env, rlagents.examples.agents.geneticalgorithm_discretelinear(a, o))
         run_agent(env, rlagents.examples.agents.simulatedannealing_discretelinear(a, o))
@@ -41,15 +32,15 @@ class TestAgents(unittest.TestCase):
         # run_agent(env, rlagents.examples.agents.crossentropy_tabular(a, o))
 
     def test_continuousaction_continuousobservation_agents(self):
-        env = gym.make("Pendulum-v0")
+        env = "Pendulum-v0"
+        genv = gym.make(env)
 
-        a = env.action_space
-        o = env.observation_space
+        a = genv.action_space
+        o = genv.observation_space
 
         logging.disable(logging.CRITICAL)
         warnings.filterwarnings("ignore")
 
-        run_agent(env, rlagents.examples.agents.random(a, o))
         run_agent(env, rlagents.examples.agents.crossentropy_continuouslinear(a, o))
         run_agent(env, rlagents.examples.agents.geneticalgorithm_continuouslinear(a, o))
         run_agent(env, rlagents.examples.agents.simulatedannealing_continuouslinear(a, o))

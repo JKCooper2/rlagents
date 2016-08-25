@@ -35,6 +35,9 @@ class ModelBase(object):
     def reset(self):
         raise NotImplementedError
 
+    def update(self, observation, action, value):
+        pass
+
 
 class WeightedLinearModel(ModelBase):
     """

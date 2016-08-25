@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from rlagents.optimisation.evolutionary import CrossEntropy, GeneticAlgorithm, HillClimbing, SimulatedAnnealing
+from rlagents.evolution import CrossEntropy, GeneticAlgorithm, HillClimbing, SimulatedAnnealing
 from rlagents.functions.decay import FixedDecay
 
 class TestCrossEntropy(unittest.TestCase):

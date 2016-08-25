@@ -15,6 +15,11 @@ class OptimiserBase(object):
         raise NotImplementedError
 
 
+class DefaultOptimiser(OptimiserBase):
+    def run(self):
+        pass
+
+
 class MonteCarlo(OptimiserBase):
     def __init__(self, model=None, memory=None, discount=0.95, learning_rate=None):
         OptimiserBase.__init__(self, model, memory)

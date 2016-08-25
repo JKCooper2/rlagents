@@ -18,6 +18,14 @@ class ExplorationBase(object):
         raise NotImplementedError
 
 
+class DefaultExploration(ExplorationBase):
+    def update(self):
+        pass
+
+    def bias_action_value(self, observation):
+        return self.model.action_value(observation)
+
+
 class EpsilonGreedy(ExplorationBase):
     def __init__(self, action_space, decay=None):
         self.action_space = action_space
