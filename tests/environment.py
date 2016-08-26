@@ -6,10 +6,10 @@ from rlagents.agents import Agent
 from rlagents.evolution import GeneticAlgorithm
 from rlagents.models import WeightedLinearModel
 from rlagents.function_approximation import DefaultFA, DiscreteMaxFA
-
+import rlagents.examples.agents
 
 def main():
-    env = gym.make("Acrobot-v1")
+    env = gym.make("Pendulum-v0")
 
     action_fa = DiscreteMaxFA(env.action_space)
     observation_fa = DefaultFA(env.observation_space)
@@ -18,9 +18,11 @@ def main():
     pool = Pool(GeneticAlgorithm(), times_run=1)
     pool.add(agent, number=20)
 
-    em = EnvManager("Acrobot-v1", pool, api_key="sk_kH4UU0T8TgmV0K1DN8SiQ")
+    agent = rlagents.examples.agents.random_continuous(env.action_space, env.observation_space)
 
-    em.run(n_episodes=500, video_callable=False)
+    em = EnvManager("Pendulum-v0", agent, api_key="sk_kH4UU0T8TgmV0K1DN8SiQ")
+
+    em.run(n_episodes=500, video_callable=None)
 
 
 if __name__ == "__main__":

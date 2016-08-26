@@ -1,7 +1,7 @@
 import warnings
 
 from rlagents.function_approximation import DefaultFA, SingleTiling, FunctionApproximationBase, DiscreteMaxFA
-from rlagents.models import ModelBase, TabularModel
+from rlagents.models import ModelBase, DefaultModel
 from rlagents.memory import ListMemory
 from rlagents.optimisation import DefaultOptimiser, OptimiserBase
 from rlagents.exploration import DefaultExploration, ExplorationBase
@@ -47,7 +47,7 @@ class Agent(object):
     @model.setter
     def model(self, m):
         if not isinstance(m, ModelBase):
-            m = TabularModel(DefaultFA(self.action_space), SingleTiling(self.observation_space, 8))
+            m = DefaultModel(self.action_fa, DefaultFA(self.observation_space))
             warnings.warn("Model type invalid, using defaults")
 
         self._model = m
@@ -59,7 +59,7 @@ class Agent(object):
     @action_fa.setter
     def action_fa(self, afa):
         if not isinstance(afa, FunctionApproximationBase):
-            afa = DiscreteMaxFA(self.action_space)  # For now as most envs testing are discrete
+            afa = DefaultFA(self.action_space)  # For now as most envs testing are discrete
             warnings.warn("action_fa must inherit from FunctionApproximationBase using defaults")
 
         self._action_fa = afa

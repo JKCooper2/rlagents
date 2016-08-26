@@ -39,6 +39,33 @@ class ModelBase(object):
         pass
 
 
+class DefaultModel(ModelBase):
+    """Default Model where nothing happens"""
+    def __init__(self, action_fa, observation_fa):
+        ModelBase.__init__(self, action_fa, observation_fa)
+
+    def action_value(self, observation):
+        return np.zeros(self.n_actions)
+
+    def state_value(self, observation):
+        return np.zeros(1)
+
+    def state_action_value(self, observation, action):
+        return np.zeros(1)
+
+    def export_values(self):
+        return np.zeros(1)
+
+    def import_values(self, values):
+        pass
+
+    def reset(self):
+        pass
+
+    def update(self, observation, action, value):
+        pass
+
+
 class WeightedLinearModel(ModelBase):
     """
     Applies weighted linear function to an observation

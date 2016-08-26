@@ -23,13 +23,11 @@ class TestAgents(unittest.TestCase):
         logging.disable(logging.CRITICAL)
         warnings.filterwarnings("ignore")
 
+        run_agent(env, rlagents.examples.agents.random_discrete(a, o))
         run_agent(env, rlagents.examples.agents.crossentropy_discretelinear(a, o))
         run_agent(env, rlagents.examples.agents.geneticalgorithm_discretelinear(a, o))
         run_agent(env, rlagents.examples.agents.simulatedannealing_discretelinear(a, o))
         run_agent(env, rlagents.examples.agents.hillclimbing_discretelinear(a, o))
-        run_agent(env, rlagents.examples.agents.standard(a, o))
-        run_agent(env, rlagents.examples.agents.standard_pandasmemory(a, o))
-        # run_agent(env, rlagents.examples.agents.crossentropy_tabular(a, o))
 
     def test_continuousaction_continuousobservation_agents(self):
         env = "Pendulum-v0"
@@ -41,8 +39,8 @@ class TestAgents(unittest.TestCase):
         logging.disable(logging.CRITICAL)
         warnings.filterwarnings("ignore")
 
+        run_agent(env, rlagents.examples.agents.random_continuous(a, o))
         run_agent(env, rlagents.examples.agents.crossentropy_continuouslinear(a, o))
         run_agent(env, rlagents.examples.agents.geneticalgorithm_continuouslinear(a, o))
         run_agent(env, rlagents.examples.agents.simulatedannealing_continuouslinear(a, o))
         run_agent(env, rlagents.examples.agents.hillclimbing_continuouslinear(a, o))
-        # run_agent(env, rlagents.examples.agents.standard(a, o))

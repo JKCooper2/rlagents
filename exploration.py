@@ -26,6 +26,21 @@ class DefaultExploration(ExplorationBase):
         return self.model.action_value(observation)
 
 
+class RandomExploration(ExplorationBase):
+    def update(self):
+        pass
+
+    def bias_action_value(self, observation):
+        if self.model.action_fa.space_type == 'D':
+            q_s = self.model.action_value(observation)
+            q_s[np.random.randint(len(q_s))] = max(q_s) + 1
+
+            return q_s
+
+        elif self.model.action_fa.space_type == 'B':
+            return np.array([self.model.action_fa.space.sample()])
+
+
 class EpsilonGreedy(ExplorationBase):
     def __init__(self, action_space, decay=None):
         self.action_space = action_space
