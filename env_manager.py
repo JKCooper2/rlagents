@@ -24,6 +24,9 @@ class EnvManager(object):
             done = False
             agent = self.agents.next_agent()
 
+            if not agent.configured:
+                agent.configure(self.env.action_space, self.env.observation_space)
+
             action = agent.act(observation, reward, done)
 
             while not done:

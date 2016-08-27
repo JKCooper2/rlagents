@@ -30,7 +30,6 @@ class TestWeightedLinearModel(unittest.TestCase):
     def test_state_action_value(self):
         with self.assertRaises(TypeError):
             self.m.state_action_value(self.observation, 1.5)
-
         self.assertEqual(self.m.state_action_value(self.observation, 0), 5.5890863043291095)
         self.assertEqual(self.m.state_action_value(self.observation, 1), 3.904665726893728)
 

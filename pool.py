@@ -47,12 +47,9 @@ class Pool(object):
 
         self._times_run = tr
 
-    def add(self, agent, number=1, reset=True):
+    def add(self, agent, number=1):
         for i in range(number):
             new_agent = copy.deepcopy(agent)
-
-            if reset:
-                new_agent.model.reset()
 
             for j in range(self.times_run):
                 self.agents.append(copy.deepcopy(new_agent))

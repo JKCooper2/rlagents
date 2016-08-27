@@ -1,44 +1,52 @@
 import warnings
 
-from rlagents.function_approximation import DefaultFA, SingleTiling, FunctionApproximationBase, DiscreteMaxFA
+from rlagents.function_approximation import DefaultFA, FunctionApproximationBase
 from rlagents.models import ModelBase, DefaultModel
-from rlagents.memory import ListMemory
+from rlagents.memory import MemoryBase, ListMemory
 from rlagents.optimisation import DefaultOptimiser, OptimiserBase
 from rlagents.exploration import DefaultExploration, ExplorationBase
 
 
 class Agent(object):
-    def __init__(self, action_space, observation_space, action_fa=None, model=None, exploration=None, memory=None, optimiser=None):
+    def __init__(self, action_space=None, observation_space=None, action_fa=None, observation_fa=None, model=None, exploration=None, memory=None, optimiser=None):
         self.action_space = action_space
         self.observation_space = observation_space
-
-        self.action_fa = action_fa
-        self.model = model
-
         self.memory = memory
-        self.action_fa = action_fa
 
+        self.action_fa = action_fa
+        self.observation_fa = observation_fa
+        self.model = model
         self.exploration = exploration
         self.optimiser = optimiser
 
+        # Used by pool to understand what happened with an agent
         self.episode_reward = 0
         self.done = False
 
-    @property
-    def action_space(self):
-        return self._action_space
+        self.configured = False
 
-    @action_space.setter
-    def action_space(self, a_s):
-        self._action_space = a_s
+        if self.action_space is not None and self.observation_space is not None:
+            self.configure(self.action_space, self.observation_space)
 
-    @property
-    def observation_space(self):
-        return self._observation_space
+    def configure(self, action_space=None, observation_space=None, overwrite=False):
+        if self.configured and overwrite is False:
+            return
 
-    @observation_space.setter
-    def observation_space(self, o_s):
-        self._observation_space = o_s
+        if action_space is None and observation_space is None:
+            return
+
+        if action_space is not None:
+            self.action_space = action_space
+            self.action_fa.configure(self.action_space)
+
+        if observation_space is not None:
+            self.observation_space = observation_space
+            self.observation_fa.configure(self.observation_space)
+
+        self.model.configure(self.action_fa, self.observation_fa)
+        self.exploration.configure(self.model)
+        self.optimiser.configure(self.model, self.memory)
+        self.configured = True
 
     @property
     def model(self):
@@ -59,10 +67,22 @@ class Agent(object):
     @action_fa.setter
     def action_fa(self, afa):
         if not isinstance(afa, FunctionApproximationBase):
-            afa = DefaultFA(self.action_space)  # For now as most envs testing are discrete
+            afa = DefaultFA(self.action_space)
             warnings.warn("action_fa must inherit from FunctionApproximationBase using defaults")
 
         self._action_fa = afa
+
+    @property
+    def observation_fa(self):
+        return self._observation_fa
+
+    @observation_fa.setter
+    def observation_fa(self, ofa):
+        if not isinstance(ofa, FunctionApproximationBase):
+            ofa = DefaultFA(self.observation_space)
+            warnings.warn("observation_fa must inherit from FunctionApproximationBase using defaults")
+
+        self._observation_fa = ofa
 
     @property
     def exploration(self):
@@ -74,7 +94,6 @@ class Agent(object):
             ex = DefaultExploration()
             warnings.warn('Exploration type invalid, using default. ({0})'.format(ex))
 
-        ex.model = self.model
         self._exploration = ex
 
     @property
@@ -83,13 +102,13 @@ class Agent(object):
 
     @memory.setter
     def memory(self, m):
-        if m is None:
+        if not isinstance(m, MemoryBase):
             m = ListMemory(size=2)
             m.new(['observations',
                    'actions',
                    'done',
-                   'rewards',
-                   'parameters'])
+                   'rewards'])
+            warnings.warn('Memory type invalid, using List. ({0})'.format(m))
 
         self._memory = m
 
@@ -104,11 +123,6 @@ class Agent(object):
             warnings.warn("Optimiser is not a valid OptimiserBase")
 
         self._optimiser = o
-
-        # Probably not the best idea to require ordering of variable loading but simpler than
-        # passing through variables each time
-        self._optimiser.model = self.model
-        self._optimiser.memory = self.memory
 
     def next_agent(self):
         """Keeps functionality in EnvManager consistent with Pools"""

@@ -14,6 +14,10 @@ class OptimiserBase(object):
     def run(self):
         raise NotImplementedError
 
+    def configure(self, model, memory):
+        self.model = model
+        self.memory = memory
+
 
 class DefaultOptimiser(OptimiserBase):
     def run(self):

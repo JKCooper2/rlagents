@@ -17,6 +17,9 @@ class ExplorationBase(object):
     def bias_action_value(self, observation):
         raise NotImplementedError
 
+    def configure(self, model):
+        self.model = model
+
 
 class DefaultExploration(ExplorationBase):
     def update(self):
@@ -38,7 +41,7 @@ class RandomExploration(ExplorationBase):
             return q_s
 
         elif self.model.action_fa.space_type == 'B':
-            return np.array([self.model.action_fa.space.sample()])
+            return self.model.action_fa.space.sample()
 
 
 class EpsilonGreedy(ExplorationBase):

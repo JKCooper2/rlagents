@@ -2,7 +2,7 @@ import numpy as np
 
 
 class ModelBase(object):
-    def __init__(self, action_fa, observation_fa):
+    def __init__(self, action_fa=None, observation_fa=None):
         self.observation_fa = observation_fa
         self.action_fa = action_fa
 
@@ -38,23 +38,33 @@ class ModelBase(object):
     def update(self, observation, action, value):
         pass
 
+    def configure(self, action_fa, observation_fa):
+        raise NotImplementedError
+
 
 class DefaultModel(ModelBase):
     """Default Model where nothing happens"""
-    def __init__(self, action_fa, observation_fa):
+    def __init__(self, action_fa=None, observation_fa=None):
         ModelBase.__init__(self, action_fa, observation_fa)
 
+        if self.action_fa is not None and self.observation_fa is not None:
+            self.configure(self.action_fa, self.observation_fa)
+
+    def configure(self, action_fa, observation_fa):
+        self.action_fa = action_fa
+        self.observation_fa = observation_fa
+
     def action_value(self, observation):
-        return np.zeros(self.n_actions)
+        return [0] * self.n_actions
 
     def state_value(self, observation):
-        return np.zeros(1)
+        return [0]
 
     def state_action_value(self, observation, action):
-        return np.zeros(1)
+        return [0]
 
     def export_values(self):
-        return np.zeros(1)
+        return [0]
 
     def import_values(self, values):
         pass
@@ -70,14 +80,22 @@ class WeightedLinearModel(ModelBase):
     """
     Applies weighted linear function to an observation
     """
-    def __init__(self, action_fa, observation_fa, bias=True, normalise=False):
+    def __init__(self, action_fa=None, observation_fa=None, bias=True, normalise=False):
         ModelBase.__init__(self, action_fa, observation_fa)
 
         self.bias = bias
         self.normalise = normalise
 
-        self.weights = np.random.randn(self.n_observations * self.n_actions).reshape(self.n_observations, self.n_actions)
-        self.bias_weight = np.random.randn(self.n_actions).reshape(1, self.n_actions) if self.bias else np.zeros(self.n_actions).reshape(1, self.n_actions)
+        self.weights = None
+        self.bias_weight = None
+
+        if self.action_fa is not None and self.observation_fa is not None:
+            self.configure(self.action_fa, self.observation_fa)
+
+    def configure(self, action_fa, observation_fa):
+        self.action_fa = action_fa
+        self.observation_fa = observation_fa
+        self.reset()
 
     # Returns the action-value array
     def action_value(self, observation):
@@ -86,7 +104,6 @@ class WeightedLinearModel(ModelBase):
         return score[0]
 
     def state_value(self, observation):
-        observation = self.observation_fa.convert(observation)
         return max(self.action_value(observation))
 
     def state_action_value(self, observation, action):
@@ -113,11 +130,11 @@ class WeightedLinearModel(ModelBase):
 
     def reset(self):
         self.weights = np.random.randn(self.n_observations * self.n_actions).reshape(self.n_observations, self.n_actions)
-        self.bias_weight = np.random.randn(self.n_actions).reshape(1, self.n_actions) if self.bias else np.zeros(self.n_actions)
+        self.bias_weight = np.random.randn(self.n_actions).reshape(1, self.n_actions) if self.bias else np.zeros(self.n_actions).reshape(1, self.n_actions)
 
 
 class TabularModel(ModelBase):
-    def __init__(self, action_fa, observation_fa, mean=0.0, std=1.0):
+    def __init__(self, action_fa=None, observation_fa=None, mean=0.0, std=1.0):
         ModelBase.__init__(self, action_fa, observation_fa)
 
         self.mean = mean
@@ -126,6 +143,12 @@ class TabularModel(ModelBase):
         self.weights = np.random.normal(self.mean, scale=self.std, size=(self.observation_fa.n_total, self.action_fa.n_total))
         self.keys = None
 
+        if self.action_fa is not None and self.observation_fa is not None:
+            self.configure(self.action_fa, self.observation_fa)
+
+    def configure(self, action_fa, observation_fa):
+        self.action_fa = action_fa
+        self.observation_fa = observation_fa
         self.reset()
 
     def state_value(self, observation):

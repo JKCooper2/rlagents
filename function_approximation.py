@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 from gym.spaces import Discrete, Box, Tuple
 
 """
@@ -8,7 +9,7 @@ a value contained within that space to convert it into another form
 
 
 class FunctionApproximationBase(object):
-    def __init__(self, space):
+    def __init__(self, space=None):
         self.space = space
 
     @property
@@ -45,17 +46,23 @@ class FunctionApproximationBase(object):
         """Takes in an action-value array"""
         raise NotImplementedError
 
+    def configure(self, space):
+        raise NotImplementedError
+
 
 class DefaultFA(FunctionApproximationBase):
-    def __init__(self, space):
+    def __init__(self, space=None):
         FunctionApproximationBase.__init__(self, space)
 
     def convert(self, array):
         return array
 
+    def configure(self, space):
+        self.space = space
+
 
 class DiscreteMaxFA(FunctionApproximationBase):
-    def __init__(self, space):
+    def __init__(self, space=None):
         FunctionApproximationBase.__init__(self, space)
 
     def convert(self, array):
@@ -66,9 +73,12 @@ class DiscreteMaxFA(FunctionApproximationBase):
 
         return action
 
+    def configure(self, space):
+        self.space = space
+
 
 class ClipFA(FunctionApproximationBase):
-    def __init__(self, space):
+    def __init__(self, space=None):
         FunctionApproximationBase.__init__(self, space)
 
     def convert(self, array):
@@ -79,14 +89,15 @@ class ClipFA(FunctionApproximationBase):
 
         return action
 
+    def configure(self, space):
+        self.space = space
+
 
 # Single Tiling implementation with equidistant spacing
 class SingleTiling(FunctionApproximationBase):
     # Dimensions is a list containing tuples of the min and max values of each dimension
-    def __init__(self, space, num_tiles, resizeable=False):
+    def __init__(self, space=None, num_tiles=1, resizeable=False):
         FunctionApproximationBase.__init__(self, space)
-        if self.space_type != 'B':
-            raise TypeError("SingleTiling is only valid for box environments")
 
         self.num_tiles = num_tiles
 
@@ -94,8 +105,17 @@ class SingleTiling(FunctionApproximationBase):
         self.resize_count = 500
         self.resize_rate = 0.01
 
-        self.tiles = np.zeros(self.n_total)
+        self.tiles = None
+        self.tile_boundaries = None
+        self.tile_hits = None
 
+    def configure(self, space):
+        self.space = space
+
+        if self.space_type != 'B':
+            raise TypeError("SingleTiling is only valid for box environments")
+
+        self.tiles = np.zeros(self.n_total)
         self.tile_boundaries = self.__set_tile_boundaries()
         self.tile_hits = self.__set_tile_hits()
 
