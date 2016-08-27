@@ -55,7 +55,7 @@ class Agent(object):
     @model.setter
     def model(self, m):
         if not isinstance(m, ModelBase):
-            m = DefaultModel(self.action_fa, DefaultFA(self.observation_space))
+            m = DefaultModel()
             warnings.warn("Model type invalid, using defaults")
 
         self._model = m
@@ -67,7 +67,7 @@ class Agent(object):
     @action_fa.setter
     def action_fa(self, afa):
         if not isinstance(afa, FunctionApproximationBase):
-            afa = DefaultFA(self.action_space)
+            afa = DefaultFA()
             warnings.warn("action_fa must inherit from FunctionApproximationBase using defaults")
 
         self._action_fa = afa
@@ -79,7 +79,7 @@ class Agent(object):
     @observation_fa.setter
     def observation_fa(self, ofa):
         if not isinstance(ofa, FunctionApproximationBase):
-            ofa = DefaultFA(self.observation_space)
+            ofa = DefaultFA()
             warnings.warn("observation_fa must inherit from FunctionApproximationBase using defaults")
 
         self._observation_fa = ofa
@@ -130,6 +130,9 @@ class Agent(object):
         return self
 
     def act(self, observation, reward, done):
+        if not self.configured:
+            raise AssertionError("Agent must have run .configure() before taking an action")
+
         self.episode_reward += reward
         self.done = done
 
