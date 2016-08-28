@@ -124,11 +124,6 @@ class Agent(object):
 
         self._optimiser = o
 
-    def next_agent(self):
-        """Keeps functionality in EnvManager consistent with Pools"""
-        self.episode_reward = 0
-        return self
-
     def act(self, observation, reward, done):
         if not self.configured:
             raise AssertionError("Agent must have run .configure() before taking an action")

@@ -1,20 +1,23 @@
 import warnings
 import copy
 
-from rlagents.evolution import EvolutionaryBase, HillClimbing
+from rlagents.evolution import EvolutionaryBase, DefaultEvolution
 
 """
-Pool holds a collection of agents and allows for aggregate functions to performed over that collection, e.g. evolution
+AgentManager holds a collection of agents and allows for aggregate functions to performed over that collection, e.g. evolution
 """
 
 
-class Pool(object):
-    def __init__(self, evolution, times_run=1):
+class AgentManager(object):
+    def __init__(self, evolution=None, agent=None, times_run=1):
         self.evolution = evolution
         self.times_run = times_run
 
         self.agents = []
         self.agent_results = []
+
+        if agent is not None:
+            self.add(agent)
 
     @property
     def batch_size(self):
@@ -31,8 +34,8 @@ class Pool(object):
     @evolution.setter
     def evolution(self, e):
         if not isinstance(e, EvolutionaryBase):
-            e = HillClimbing()
-            warnings.warn("Evolution not subclass of EvolutionaryBase, using default HillClimbing")
+            e = DefaultEvolution()
+            warnings.warn("Evolution not subclass of EvolutionaryBase, using default")
 
         self._evolution = e
 

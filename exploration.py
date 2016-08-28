@@ -40,8 +40,7 @@ class RandomExploration(ExplorationBase):
 
             return q_s
 
-        elif self.model.action_fa.space_type == 'B':
-            return self.model.action_fa.space.sample()
+        return self.model.action_fa.space.sample()
 
 
 class EpsilonGreedy(ExplorationBase):

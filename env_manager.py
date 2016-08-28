@@ -1,5 +1,8 @@
 import gym
+import gym_soccer
+import gym_pull
 from gym.scoreboard.scoring import score_from_local
+from rlagents.agent_manager import AgentManager
 
 """
 Env Manager is responsible for running an agent or group of agents over an environment
@@ -10,6 +13,9 @@ class EnvManager(object):
     def __init__(self, env_name, agents, api_key=None):
         self.env_name = env_name
         self.env = gym.make(env_name)
+
+        if not isinstance(agents, AgentManager):
+            raise TypeError("EnvManager requires an AgentManager as the agents")
 
         self.agents = agents
         self.api_key = api_key

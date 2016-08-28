@@ -9,6 +9,11 @@ class EvolutionaryBase(object):
         raise NotImplementedError
 
 
+class DefaultEvolution(EvolutionaryBase):
+    def next_generation(self, batch, results):
+        return batch
+
+
 class CrossEntropy(EvolutionaryBase):
     """
     Cross Entropy evolution selects the top x% of samples in a batch
