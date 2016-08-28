@@ -60,6 +60,19 @@ class AgentManager(object):
     def clear(self):
         self.agents = []
 
+    def export(self):
+
+        ae = [agent.export() for agent in self.agents]
+        agent_dict = {}
+
+        for i, a in enumerate(ae):
+            agent_dict['Agent {0}'.format(i)] = a
+
+        return {"Agent Manager":
+                    {"Evolution": self.evolution.export(),
+                     "Times Run": self.times_run,
+                     "Agents": agent_dict}}
+
     def next_agent(self):
         """Called by EnvManager to get the next agent to run"""
         # Check if the agent has any record

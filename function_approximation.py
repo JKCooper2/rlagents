@@ -49,6 +49,9 @@ class FunctionApproximationBase(object):
     def configure(self, space):
         raise NotImplementedError
 
+    def export(self):
+        raise NotImplementedError
+
 
 class DefaultFA(FunctionApproximationBase):
     def __init__(self, space=None):
@@ -59,6 +62,9 @@ class DefaultFA(FunctionApproximationBase):
 
     def configure(self, space):
         self.space = space
+
+    def export(self):
+        return {"Type": "Default"}
 
 
 class DiscreteMaxFA(FunctionApproximationBase):
@@ -76,6 +82,9 @@ class DiscreteMaxFA(FunctionApproximationBase):
     def configure(self, space):
         self.space = space
 
+    def export(self):
+        return {"Type": "Discrete Max"}
+
 
 class ClipFA(FunctionApproximationBase):
     def __init__(self, space=None):
@@ -91,6 +100,9 @@ class ClipFA(FunctionApproximationBase):
 
     def configure(self, space):
         self.space = space
+
+    def export(self):
+        return {"Type": "Clip"}
 
 
 # Single Tiling implementation with equidistant spacing
@@ -196,3 +208,8 @@ class SingleTiling(FunctionApproximationBase):
     def convert(self, observation):
         results = self.__convert_base10(self.__get_tile(observation))
         return results
+
+    def export(self):
+        return {"Type": "Single Tiling",
+                "Num Tiles": self.num_tiles,
+                "Resizeable": self.resizeable}

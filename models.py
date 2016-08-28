@@ -41,6 +41,9 @@ class ModelBase(object):
     def configure(self, action_fa, observation_fa):
         raise NotImplementedError
 
+    def export(self):
+        raise NotImplementedError
+
 
 class DefaultModel(ModelBase):
     """Default Model where nothing happens"""
@@ -74,6 +77,9 @@ class DefaultModel(ModelBase):
 
     def update(self, observation, action, value):
         pass
+
+    def export(self):
+        return {"Type": "Default"}
 
 
 class WeightedLinearModel(ModelBase):
@@ -132,6 +138,10 @@ class WeightedLinearModel(ModelBase):
         self.weights = np.random.randn(self.n_observations * self.n_actions).reshape(self.n_observations, self.n_actions)
         self.bias_weight = np.random.randn(self.n_actions).reshape(1, self.n_actions) if self.bias else np.zeros(self.n_actions).reshape(1, self.n_actions)
 
+    def export(self):
+        return {"Type": "Weighted Linear Model",
+                "Bias": self.bias,
+                "Normalise": self.normalise}
 
 class TabularModel(ModelBase):
     def __init__(self, action_fa=None, observation_fa=None, mean=0.0, std=1.0):
@@ -181,3 +191,8 @@ class TabularModel(ModelBase):
     def reset(self):
         self.weights = np.random.normal(self.mean, scale=self.std, size=(self.observation_fa.n_total, self.action_fa.n_total))
         self.keys = None
+
+    def export(self):
+        return {"Type": "Tabular Model",
+                "Mean": self.mean,
+                "Std": self.std}

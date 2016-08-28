@@ -31,7 +31,6 @@ class TestListMemory(unittest.TestCase):
         self.assertEqual(lm.fetch_last(1)["reward"][0], 2)
 
 
-
 class TestPandasMemory(unittest.TestCase):
     def test_new_string(self):
         pm = PandasMemory()

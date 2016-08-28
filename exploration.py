@@ -20,6 +20,9 @@ class ExplorationBase(object):
     def configure(self, model):
         self.model = model
 
+    def export(self):
+        raise NotImplementedError
+
 
 class DefaultExploration(ExplorationBase):
     def update(self):
@@ -27,6 +30,9 @@ class DefaultExploration(ExplorationBase):
 
     def bias_action_value(self, observation):
         return self.model.action_value(observation)
+
+    def export(self):
+        return {"Type": "Default"}
 
 
 class RandomExploration(ExplorationBase):
@@ -41,6 +47,9 @@ class RandomExploration(ExplorationBase):
             return q_s
 
         return self.model.action_fa.space.sample()
+
+    def export(self):
+        return {"Type": "Random"}
 
 
 class EpsilonGreedy(ExplorationBase):
@@ -78,6 +87,10 @@ class EpsilonGreedy(ExplorationBase):
 
     def update(self):
         self.decay.update()
+
+    def export(self):
+        return {"Type": "Eplison Greedy",
+                "Decay": self.decay.export()}
 
 
 class Softmax(ExplorationBase):
@@ -127,3 +140,7 @@ class Softmax(ExplorationBase):
 
     def update(self):
         pass
+
+    def export(self):
+        return {"Type": "Softmax",
+                "Temperature": self.temperature}

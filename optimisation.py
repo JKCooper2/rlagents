@@ -18,10 +18,16 @@ class OptimiserBase(object):
         self.model = model
         self.memory = memory
 
+    def export(self):
+        raise NotImplementedError
+
 
 class DefaultOptimiser(OptimiserBase):
     def run(self):
         pass
+
+    def export(self):
+        return {"Type": "Default"}
 
 
 class MonteCarlo(OptimiserBase):
@@ -65,4 +71,9 @@ class MonteCarlo(OptimiserBase):
 
         if done:
             self.learning_rate.update()
+
+    def export(self):
+        return {"Type": "Monte Carlo",
+                "Discount": self.discount,
+                "Learning Rate": self.learning_rate.export()}
 

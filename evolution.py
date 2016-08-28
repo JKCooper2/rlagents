@@ -5,6 +5,9 @@ from rlagents.functions.decay import DecayBase, FixedDecay
 
 
 class EvolutionaryBase(object):
+    def export(self):
+        raise NotImplementedError
+
     def next_generation(self, batch, results):
         raise NotImplementedError
 
@@ -12,6 +15,9 @@ class EvolutionaryBase(object):
 class DefaultEvolution(EvolutionaryBase):
     def next_generation(self, batch, results):
         return batch
+
+    def export(self):
+        return {"Type": "Default"}
 
 
 class CrossEntropy(EvolutionaryBase):
@@ -38,6 +44,10 @@ class CrossEntropy(EvolutionaryBase):
             raise ValueError("Elite must be between 0 and 1 inclusive")
 
         self._elite = e
+
+    def export(self):
+        return {"Type": "CrossEntropy",
+                "Elite": self.elite}
 
     def next_generation(self, batch, results):
         """
@@ -93,6 +103,13 @@ class GeneticAlgorithm(EvolutionaryBase):
         self.mutation_rate = mutation_rate
         self.mutation_amount = mutation_amount
         self.scaling = scaling
+
+    def export(self):
+        return {"Type": "GeneticAlgorithm",
+                "Cross Over": self.crossover,
+                "Mutation Rate": self.mutation_rate,
+                "Mutation Amount": self.mutation_amount,
+                "Scaling": self.scaling}
 
     @property
     def crossover(self):
@@ -234,6 +251,11 @@ class HillClimbing(EvolutionaryBase):
         self.best_weights = None
         self.best_score = None
 
+    def export(self):
+        return {"Type": "Hill Climbing",
+                "Accept Equal": self.accept_equal,
+                "Spread": self.spread.export()}
+
     @property
     def spread(self):
         return self._spread
@@ -309,6 +331,11 @@ class SimulatedAnnealing(EvolutionaryBase):
 
         self.testing_vals = None
         self.testing_result = 0
+
+    def export(self):
+        return {"Type": "Simulated Annealing",
+                "Temperature": self.temperature.export(),
+                "Shift": self.shift.export()}
 
     @property
     def temperature(self):

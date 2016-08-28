@@ -124,6 +124,14 @@ class Agent(object):
 
         self._optimiser = o
 
+    def export(self):
+        return {"Model": self.model.export(),
+                "Action FA": self.action_fa.export(),
+                "Observation FA": self.observation_fa.export(),
+                "Exploration": self.exploration.export(),
+                "Memory": self.memory.export(),
+                "Optimiser": self.optimiser.export()}
+
     def act(self, observation, reward, done):
         if not self.configured:
             raise AssertionError("Agent must have run .configure() before taking an action")

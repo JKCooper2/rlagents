@@ -92,6 +92,8 @@ class MemoryBase(object):
         """
         raise NotImplementedError
 
+    def export(self):
+        raise NotImplementedError
 
 class ListMemory(MemoryBase):
     def __init__(self, size=100, columns=None):
@@ -153,6 +155,11 @@ class ListMemory(MemoryBase):
         for key, value in d.iteritems():
             self.items[key].items[-1] = value
 
+    def export(self):
+        return {"Type": "List Memory",
+                "Size": self.size,
+                "Columns": self.items.keys()}
+
 
 class PandasMemory(MemoryBase):
     def __init__(self, size=100, columns=None):
@@ -195,3 +202,8 @@ class PandasMemory(MemoryBase):
     def update(self, d):
         for key, value in d.iteritems():
             self.df.ix[-1, key] = value
+
+    def export(self):
+        return {"Type": "Pandas",
+                "Size": self.size,
+                "Columns": self.df.columns()}
