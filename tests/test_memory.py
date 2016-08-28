@@ -18,6 +18,19 @@ class TestListMemory(unittest.TestCase):
         self.assertTrue("reward" in lm.items)
         self.assertTrue("action" in lm.items)
 
+    def test_store_partial_list(self):
+        lm = ListMemory()
+        lm.new(["observation", "reward", "action"])
+        lm.store({"observation": 1})
+
+        self.assertEqual(lm.fetch_last(1)["observation"][0], 1)
+        self.assertEqual(lm.fetch_last(1)["reward"][0], None)
+
+        lm.update({"reward": 2})
+        self.assertEqual(lm.fetch_last(1)["observation"][0], 1)
+        self.assertEqual(lm.fetch_last(1)["reward"][0], 2)
+
+
 
 class TestPandasMemory(unittest.TestCase):
     def test_new_string(self):

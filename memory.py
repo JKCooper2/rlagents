@@ -112,10 +112,20 @@ class ListMemory(MemoryBase):
             for key, value in d.iteritems():
                 self.items[key].store(value)
 
+            mem_keys = [key for key in self.items.keys() if key not in d.keys()]
+
+            for mem_key in mem_keys:
+                self.items[mem_key].store(None)
+
         else:
             for m in d:
                 for key, value in m.iteritems():
                     self.items[key].store(value)
+
+                mem_keys = [key for key in self.items.keys() if key not in m.keys()]
+
+                for mem_key in mem_keys:
+                    self.items[mem_key].store(None)
 
     def fetch_last(self, i, name=None, return_type="dict"):
         if return_type not in ["dict"]:
@@ -141,7 +151,7 @@ class ListMemory(MemoryBase):
 
     def update(self, d):
         for key, value in d.iteritems():
-            self.items[key][-1] = value
+            self.items[key].items[-1] = value
 
 
 class PandasMemory(MemoryBase):
