@@ -53,8 +53,7 @@ class RandomExploration(ExplorationBase):
 
 
 class EpsilonGreedy(ExplorationBase):
-    def __init__(self, action_space, decay=None):
-        self.action_space = action_space
+    def __init__(self, decay=None):
         self.decay = decay
 
     @property
@@ -77,7 +76,7 @@ class EpsilonGreedy(ExplorationBase):
         return "EpsilonGreedy decay: {0}".format(self.decay)
 
     def bias_action_value(self, observation):
-        q_s = self.model.action_value(observation)
+        q_s = self.model.action_value(observation).copy()   # Copied so doesn't alter weights in model
 
         if np.random.uniform() < self.value:
             # Select a random action and max it the best action
@@ -113,7 +112,7 @@ class Softmax(ExplorationBase):
         self._temperature = t
 
     def bias_action_value(self, observation):
-        q_s = self.model.action_value(observation)
+        q_s = self.model.action_value(observation).copy()
 
         probabilities = []
 

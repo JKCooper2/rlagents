@@ -35,13 +35,16 @@ class ModelBase(object):
     def reset(self):
         raise NotImplementedError
 
-    def update(self, observation, action, value):
+    def optimise(self, observation, action, value):
         pass
 
     def configure(self, action_fa, observation_fa):
         raise NotImplementedError
 
     def export(self):
+        raise NotImplementedError
+
+    def update(self, observation, action, value):
         raise NotImplementedError
 
 
@@ -143,6 +146,10 @@ class WeightedLinearModel(ModelBase):
                 "Bias": self.bias,
                 "Normalise": self.normalise}
 
+    def update(self, observation, action, value):
+        pass
+
+
 class TabularModel(ModelBase):
     def __init__(self, action_fa=None, observation_fa=None, mean=0.0, std=1.0):
         ModelBase.__init__(self, action_fa, observation_fa)
@@ -150,7 +157,7 @@ class TabularModel(ModelBase):
         self.mean = mean
         self.std = std
 
-        self.weights = np.random.normal(self.mean, scale=self.std, size=(self.observation_fa.n_total, self.action_fa.n_total))
+        self.weights = None
         self.keys = None
 
         if self.action_fa is not None and self.observation_fa is not None:
@@ -189,7 +196,11 @@ class TabularModel(ModelBase):
             self.weights[i] = np.array(values[self.n_actions * i: self.n_actions * i + self.n_actions])
 
     def reset(self):
-        self.weights = np.random.normal(self.mean, scale=self.std, size=(self.observation_fa.n_total, self.action_fa.n_total))
+        if self.std == 0:
+            self.weights = np.full((self.observation_fa.n_total, self.action_fa.n_total), self.mean)
+        else:
+            self.weights = np.random.normal(self.mean, scale=self.std, size=(self.observation_fa.n_total, self.action_fa.n_total))
+
         self.keys = None
 
     def export(self):

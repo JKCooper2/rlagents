@@ -30,7 +30,7 @@ class DefaultOptimiser(OptimiserBase):
         return {"Type": "Default"}
 
 
-class MonteCarlo(OptimiserBase):
+class TemporalDifference(OptimiserBase):
     def __init__(self, model=None, memory=None, discount=0.95, learning_rate=None):
         OptimiserBase.__init__(self, model, memory)
         self.discount = discount
@@ -56,11 +56,11 @@ class MonteCarlo(OptimiserBase):
 
         m = self.memory.fetch_last(2)
 
-        observation = m['observations'][0]
-        done = m['done'][0]
-        reward = m['rewards'][0]
+        observation = m['observations'][1]
+        done = m['done'][1]
+        reward = m['rewards'][1]
 
-        prev_obs = m['observations'][1]
+        prev_obs = m['observations'][0]
         prev_action = m['actions'][0]
 
         future = self.model.state_value(observation) if not done else 0.0
@@ -73,7 +73,7 @@ class MonteCarlo(OptimiserBase):
             self.learning_rate.update()
 
     def export(self):
-        return {"Type": "Monte Carlo",
+        return {"Type": "Temporal Difference",
                 "Discount": self.discount,
                 "Learning Rate": self.learning_rate.export()}
 

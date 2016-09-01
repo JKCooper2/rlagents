@@ -124,6 +124,7 @@ class SingleTiling(FunctionApproximationBase):
     def configure(self, space):
         self.space = space
 
+        print self.space_type
         if self.space_type != 'B':
             raise TypeError("SingleTiling is only valid for box environments")
 

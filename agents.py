@@ -146,7 +146,7 @@ class Agent(object):
         action_values = self.exploration.bias_action_value(observation)
         action = self.action_fa.convert(action_values)
 
-        self.memory.store({'actions': action})
+        self.memory.update({'actions': action})
 
         if done:
             self.exploration.update()

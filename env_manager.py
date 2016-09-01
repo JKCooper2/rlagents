@@ -37,6 +37,7 @@ class EnvManager(object):
 
             while not done:
                 observation, reward, done, info = self.env.step(action)
+
                 action = agent.act(observation, reward, done)
 
             if print_stats:

@@ -7,15 +7,15 @@ from gym.spaces import Discrete
 
 class TestEpsilonGreedy(unittest.TestCase):
     def test_default_decay(self):
-        exploration = EpsilonGreedy(Discrete(5), 1)
+        exploration = EpsilonGreedy(1)
         self.assertTrue(isinstance(exploration.decay, DecayBase))
 
     def test_epsilon_property(self):
-        exploration = EpsilonGreedy(Discrete(5), FixedDecay(0.2, 0.95, 0.1))
+        exploration = EpsilonGreedy(FixedDecay(0.2, 0.95, 0.1))
         self.assertEqual(0.2, exploration.value)
 
     def test_update(self):
-        exploration = EpsilonGreedy(Discrete(5), FixedDecay(1, 0.95, 0.1))
+        exploration = EpsilonGreedy(FixedDecay(1, 0.95, 0.1))
         exploration.update()
 
         self.assertEqual(exploration.value, 0.95)
