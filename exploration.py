@@ -67,7 +67,7 @@ class EpsilonGreedy(ExplorationBase):
     @decay.setter
     def decay(self, d):
         if not isinstance(d, DecayBase):
-            d = FixedDecay(0.1, 0, 0.1)
+            d = FixedDecay(0.1, 1, 0.1)
             warnings.warn("Decay type invalid, using default. {0}".format(d))
 
         self._decay = d
@@ -88,7 +88,7 @@ class EpsilonGreedy(ExplorationBase):
         self.decay.update()
 
     def export(self):
-        return {"Type": "Eplison Greedy",
+        return {"Type": "Epsilon Greedy",
                 "Decay": self.decay.export()}
 
 
@@ -106,8 +106,11 @@ class Softmax(ExplorationBase):
 
     @temperature.setter
     def temperature(self, t):
-        if t < 0 or t > 1:
-            raise ValueError("Temperature must be between 0 and 1 inclusive")
+        if not isinstance(t, DecayBase):
+            raise ValueError("Temperature must be a valid DecayBase")
+
+        if t.minimum < 0 or t.value < 0:
+            raise ValueError("Temperature minimum and value must be greater than 0")
 
         self._temperature = t
 
@@ -117,16 +120,14 @@ class Softmax(ExplorationBase):
         probabilities = []
 
         for action in range(len(q_s)):
-            numerator = np.e ** (q_s[action]/self.temperature)
-            denominator = sum([np.e ** (q/self.temperature) for q in q_s])
+            numerator = np.e ** (q_s[action]/self.temperature.value)
+            denominator = sum([np.e ** (q/self.temperature.value) for q in q_s])
             chance = numerator / denominator
 
             probabilities.append(chance)
 
         choice = np.random.uniform()
         cum_sum = 0
-
-        action = None
 
         for act, value in enumerate(probabilities):
             cum_sum += value
@@ -135,11 +136,11 @@ class Softmax(ExplorationBase):
                 q_s[act] = max(q_s) + 1
                 break
 
-        return action
+        return q_s
 
     def update(self):
         pass
 
     def export(self):
         return {"Type": "Softmax",
-                "Temperature": self.temperature}
+                "Temperature": self.temperature.export()}

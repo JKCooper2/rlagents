@@ -200,8 +200,9 @@ class PandasMemory(MemoryBase):
             return len(self.df.index)
 
     def update(self, d):
+        curr_index = self.count()
         for key, value in d.iteritems():
-            self.df.ix[-1, key] = value
+            self.df.ix[curr_index-1, key] = value
 
     def export(self):
         return {"Type": "Pandas",

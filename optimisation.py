@@ -51,14 +51,11 @@ class TemporalDifference(OptimiserBase):
     def run(self):
         assert self._is_valid()
 
-        if self.memory.count('observations') < 2:
-            return
+        m = self.memory.fetch_last(1)
 
-        m = self.memory.fetch_last(2)
-
-        observation = m['observations'][1]
-        done = m['done'][1]
-        reward = m['rewards'][1]
+        observation = m['new_obs'][0]
+        done = m['done'][0]
+        reward = m['rewards'][0]
 
         prev_obs = m['observations'][0]
         prev_action = m['actions'][0]

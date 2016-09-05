@@ -107,7 +107,8 @@ class Agent(object):
             m.new(['observations',
                    'actions',
                    'done',
-                   'rewards'])
+                   'rewards',
+                   'new_obs'])
             warnings.warn('Memory type invalid, using List. ({0})'.format(m))
 
         self._memory = m
@@ -132,21 +133,21 @@ class Agent(object):
                 "Memory": self.memory.export(),
                 "Optimiser": self.optimiser.export()}
 
-    def act(self, observation, reward, done):
+    def act(self, observation, reward, done, initial_state=False):
         if not self.configured:
             raise AssertionError("Agent must have run .configure() before taking an action")
 
         self.episode_reward += reward
         self.done = done
 
-        self.memory.store({'observations': observation, 'done': done, 'rewards': reward})
-
-        self.optimiser.run()
+        if not initial_state:
+            self.memory.update({'new_obs': observation, 'done': done, 'rewards': reward})
+            self.optimiser.run()
 
         action_values = self.exploration.bias_action_value(observation)
         action = self.action_fa.convert(action_values)
 
-        self.memory.update({'actions': action})
+        self.memory.store({'observations': observation, 'actions': action})
 
         if done:
             self.exploration.update()

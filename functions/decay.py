@@ -56,7 +56,7 @@ class DecayBase(object):
 
 
 class FixedDecay(DecayBase):
-    def __init__(self, value=1, decay=0.95, minimum=0):
+    def __init__(self, value=1, decay=1, minimum=0):
         DecayBase.__init__(self, value, decay, minimum)
 
     def export(self):
