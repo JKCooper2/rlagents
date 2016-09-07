@@ -54,7 +54,7 @@ def main():
 
     agent_reward = []
     max_reward = []
-    episodes = 1000
+    episodes = 100
 
     for agent in agents:
         path = "/tmp/rlagents/"

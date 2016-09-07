@@ -107,15 +107,10 @@ class ClipFA(FunctionApproximationBase):
 
 # Single Tiling implementation with equidistant spacing
 class SingleTiling(FunctionApproximationBase):
-    # Dimensions is a list containing tuples of the min and max values of each dimension
-    def __init__(self, space=None, num_tiles=1, resizeable=False):
+    def __init__(self, space=None, num_tiles=1):
         FunctionApproximationBase.__init__(self, space)
 
         self.num_tiles = num_tiles
-
-        self.resizeable = resizeable
-        self.resize_count = 500
-        self.resize_rate = 0.01
 
         self.tiles = None
         self.tile_boundaries = None
@@ -130,23 +125,16 @@ class SingleTiling(FunctionApproximationBase):
 
         self.tiles = np.zeros(self.n_total)
         self.tile_boundaries = self.__set_tile_boundaries()
-        self.tile_hits = self.__set_tile_hits()
 
     @property
     def n_total(self):
         return self.num_discrete ** self.num_tiles
 
-    def __set_tile_hits(self):
-        if self.resizeable:
-            return [np.zeros(self.num_tiles) for _ in range(self.num_discrete)]
-
-        return None
-
     def __set_tile_boundaries(self):
         tile_boundaries = []
 
         for dim in range(self.num_discrete):
-            #If np.inf then use range of +-1 (CartPole)
+            # If np.inf then use range of +-1 (CartPole)
             if self.space.high[dim] == np.inf:
                 split = self.__get_split(dim)
                 tile_boundaries.append([-1 + (i + 1) * split for i in range(self.num_tiles - 1)])
@@ -167,24 +155,6 @@ class SingleTiling(FunctionApproximationBase):
         else:
             return (self.space.high[obv_ind] - self.space.low[obv_ind]) / float(self.num_tiles)
 
-    def __update_tile_hits(self, tile):
-        for i, obv in enumerate(tile):
-            self.tile_hits[i][obv] += 1
-
-            if self.tile_hits[i][obv] >= self.resize_count:
-                # 0 is lower end, 1 is upper end
-                side_choice = int(np.random.uniform() > 0.5)
-
-                change = self.resize_rate * self.__get_split(i)
-
-                if side_choice == 0 and obv > 0:
-                    self.tile_boundaries[i][obv - 1] += change
-
-                if side_choice == 1 and obv < len(self.tile_boundaries[i]):
-                    self.tile_boundaries[i][obv] -= change
-
-                self.tile_hits[i][obv] = 0
-
     def __get_tile(self, observation):
         tile = []
 
@@ -198,9 +168,6 @@ class SingleTiling(FunctionApproximationBase):
                 if j == self.num_tiles - 2:
                     tile.append(j+1)
 
-        if self.resizeable:
-            self.__update_tile_hits(tile)
-
         return tile
 
     def __convert_base10(self, tile):
@@ -212,5 +179,4 @@ class SingleTiling(FunctionApproximationBase):
 
     def export(self):
         return {"Type": "Single Tiling",
-                "Num Tiles": self.num_tiles,
-                "Resizeable": self.resizeable}
+                "Num Tiles": self.num_tiles}

@@ -95,6 +95,7 @@ class MemoryBase(object):
     def export(self):
         raise NotImplementedError
 
+
 class ListMemory(MemoryBase):
     def __init__(self, size=100, columns=None):
         self.items = {}  # Must go before Base init as Base may call it
@@ -192,6 +193,24 @@ class PandasMemory(MemoryBase):
             ret_df.reset_index(drop=True, inplace=True)
             return ret_df
 
+    # Returns entire history for last i episodes
+    def fetch_episode(self, i, name="done", return_type="pandas"):
+        if return_type not in ["pandas"]:
+            raise TypeError("Return type not currently supported")
+
+        if return_type == "pandas":
+            ep_starts = ([0] + self.df[self.df[name]].index.tolist())[::-1]
+
+            if self.count()-1 in ep_starts:
+                ep_starts.remove(self.count()-1)
+
+            if len(ep_starts) < i:
+                return None
+
+            start = ep_starts[i-1]
+
+            return self.df.iloc[start+1:]
+
     def count(self, name=None):
         if name is not None:
             return self.df[name].count()
@@ -202,7 +221,7 @@ class PandasMemory(MemoryBase):
     def update(self, d):
         curr_index = self.count()
         for key, value in d.iteritems():
-            self.df.ix[curr_index-1, key] = value
+            self.df.set_value(curr_index-1, key, value)
 
     def export(self):
         return {"Type": "Pandas",

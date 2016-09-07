@@ -30,7 +30,56 @@ class DefaultOptimiser(OptimiserBase):
         return {"Type": "Default"}
 
 
+class MonteCarlo(OptimiserBase):
+    """
+    Monte Carlo optimisation involves updating all state action values
+    in an episodes history towards the cumulative reward at the terminal state
+    """
+    def __init__(self, model=None, memory=None, discount=0.95, learning_rate=None):
+        OptimiserBase.__init__(self, model, memory)
+        self.discount = discount
+        self.learning_rate = learning_rate
+
+    @property
+    def learning_rate(self):
+        return self._learning_rate
+
+    @learning_rate.setter
+    def learning_rate(self, lr):
+        if not isinstance(lr, DecayBase):
+            lr = FixedDecay(1, decay=0.995, minimum=0.05)
+            warnings.warn('Learning Rate type invalid, using default. ({0})'.format(lr))
+
+        self._learning_rate = lr
+
+    def run(self):
+        assert self._is_valid()
+
+        terminal_state = self.memory.fetch_last(1)
+
+        if not terminal_state['done'][0]:
+            return
+
+        m = self.memory.fetch_episode(1)
+
+        reward = m['rewards'].sum()
+
+        for i in range(len(m)):
+            self.model.update(m.iloc[i]['observations'], m.iloc[i]['actions'], reward)
+
+        self.learning_rate.update()
+
+    def export(self):
+        return {"Type": "Temporal Difference",
+                "Discount": self.discount,
+                "Learning Rate": self.learning_rate.export()}
+
+
 class TemporalDifference(OptimiserBase):
+    """
+    Temporal Difference involves updating a state-action pair based on the
+    perceived reward, and the expected future reward of the next state
+    """
     def __init__(self, model=None, memory=None, discount=0.95, learning_rate=None):
         OptimiserBase.__init__(self, model, memory)
         self.discount = discount
